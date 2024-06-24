@@ -1,40 +1,35 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument, Model, Types } from 'mongoose';
-import { UserInputModel } from '../api/models/input/userInput.model';
+import { UserInputDto } from '../api/dto/input/userInputDto';
+import { userInput } from '../../../common/pipes/userInput.pipe';
 
 @Schema()
 export class User {
     _id: mongoose.ObjectId
 
-    @Prop({
-        required: true,
-        maxlength: 10,
-        minlength: 3
-    })
+    @Prop()
     login: string;
 
-    @Prop({
-        required: true,
-        match: /^[a-z0-9]+$/,
-
-    })
+    @Prop()
     email: string;
-    
-    @Prop({
-        required: true,
-        minlength: 6,
-        maxlength: 20
-    })
+
+    @Prop()
     password: string;
+
+    @Prop()
+    createdAt: string;
+
+    @Prop( )
+    isDeleted: boolean
 
     setLogin(newLogin: string) {
         this.login = newLogin
     }
 
-    static createUser(userBody: UserInputModel) {
+    static createUser(userBody: UserInputDto) {
         // const user = {
         //     email: userBody.email,
-        //     createdAt: Date.now().toString(),
+        //     createdAt: new Date().toISOString(),
         //     login: userBody.login
         // }
         // new User(user)
