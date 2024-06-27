@@ -21,6 +21,7 @@ import { CommentsService } from './features/comments/application/comments.servic
 import { CommentsRepository } from './features/comments/infrastructure/comments.repository';
 import { CommentsController } from './features/comments/api/comments.controller';
 import { Comment, CommentSchema } from './features/comments/domain/comment.entity';
+import { appSettings } from './settings/app.settings';
 
 const CommentsProviders = [
     CommentsService,
@@ -47,9 +48,15 @@ const PostsProviders = [
 
 @Module({
     imports: [
-        MongooseModule.forRoot('mongodb+srv://admin:6XeshSKaryTj@cluster0.n2nwife.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
-            dbName: 'nest-test'
-        }),
+        MongooseModule.forRoot(
+            appSettings.env.isTesting()
+            ? appSettings.api.MONGO_CONNECTION_URI_FOR_TESTS
+            : appSettings.api.MONGO_CONNECTION_URI,
+            // { dbName: 'nest-test' }
+            // 'mongodb+srv://admin:6XeshSKaryTj@cluster0.n2nwife.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
+            //     dbName: 'nest-test'
+            // }
+        ),
         MongooseModule.forFeature([
             {
                 name: User.name,
