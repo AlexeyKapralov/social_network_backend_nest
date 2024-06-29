@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpStatus, Param, Post, Put, Req, Res } from '@nestjs/common';
-import { PostInputModel } from './dto/input/postInput.model';
+import { PostInputDto } from './dto/input/postInput.dto';
 import { PostsService } from '../application/posts.service';
 import { PostsQueryRepository } from '../repository/postsQuery.repository';
 import { Request, Response } from 'express';
@@ -15,7 +15,7 @@ export class PostsController {
 
     @Post()
     async createPost(
-        @Body() postInputData: PostInputModel
+        @Body() postInputData: PostInputDto
     ) {
         return await this.postService.createPost(postInputData)
     }
@@ -53,7 +53,7 @@ export class PostsController {
     @Put(':postId')
     async updatePost(
         @Param('postId') postId: string,
-        @Body() postUpdateData: PostInputModel,
+        @Body() postUpdateData: PostInputDto,
         @Res({passthrough: true}) res: Response
     ) {
         const isUpdatedPost = await this.postService.updatePost(postId, postUpdateData)

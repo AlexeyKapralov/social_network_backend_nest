@@ -1,14 +1,14 @@
 import { Body, Controller, Delete, Get, HttpStatus, Param, Post, Put, Query, Res } from '@nestjs/common';
-import { BlogInputModel } from './dto/input/blogInput.model';
+import { BlogInputDto } from './dto/input/blogInput.dto';
 import { BlogService } from '../application/blog.service';
 import { QueryDto } from '../../../common/dto/query.dto';
 import { BlogsQueryRepository } from '../infrastructure/blogsQuery.repository';
 import { BlogDocument } from '../domain/blogs.entity';
 import { Response } from 'express';
 import { PostsQueryRepository } from '../../posts/repository/postsQuery.repository';
-import { BlogPostInputModel } from './dto/input/blogPostInputModel';
+import { BlogPostInputDto } from './dto/input/blogPostInputDto';
 import { PostDocument } from '../../posts/domain/posts.entity';
-import { PostsViewModel } from '../../posts/api/dto/output/extendedLikesInfoView.model';
+import { PostsViewDto } from '../../posts/api/dto/output/extendedLikesInfoView.dto';
 
 @Controller('blogs')
 export class BlogsController {
@@ -21,7 +21,7 @@ export class BlogsController {
 
     @Post()
     async createBlog(
-        @Body() blogBody: BlogInputModel,
+        @Body() blogBody: BlogInputDto,
     ) {
         const createdBlog: BlogDocument = await this.blogService.createBlog(blogBody);
         return await this.blogQueryRepository.findBlog(createdBlog._id.toString());
@@ -30,10 +30,10 @@ export class BlogsController {
     @Post(':blogId/posts')
     async createPostForBlog(
         @Param('blogId') blogId: string,
-        @Body() blogPostBody: BlogPostInputModel,
+        @Body() blogPostBody: BlogPostInputDto,
         @Res({passthrough: true}) res: Response
     ) {
-        const createdPostForBlog: PostsViewModel | null = await this.blogService.createPostForBlog(blogId, blogPostBody)
+        const createdPostForBlog: PostsViewDto | null = await this.blogService.createPostForBlog(blogId, blogPostBody)
         createdPostForBlog ? res.status(HttpStatus.CREATED).send(createdPostForBlog) : res.status(HttpStatus.NOT_FOUND)
     }
 
@@ -73,7 +73,7 @@ export class BlogsController {
     @Put(':blogId')
     async updateBlog(
         @Param('blogId') blogId: string,
-        @Body() updateData: BlogInputModel,
+        @Body() updateData: BlogInputDto,
         @Res({ passthrough: true }) res: Response,
     ) {
         const isUpdated = await this.blogService.updateBlog(blogId, updateData)

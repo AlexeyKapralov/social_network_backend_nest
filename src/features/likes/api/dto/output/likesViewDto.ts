@@ -4,7 +4,7 @@ export enum LikeStatus {
     Dislike = 'Dislike'
 }
 
-export type LikeDetailsViewModel = {
+export type LikeDetailsViewDto = {
     description: string,
     addedAt: string,
     userId: string,

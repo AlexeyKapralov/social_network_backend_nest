@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { CommentsViewModel } from '../api/dto/output/commentsView.model';
+import { CommentsViewDto } from '../api/dto/output/commentsView.dto';
 import { CommentsRepository } from '../infrastructure/comments.repository';
 import { UsersRepository } from '../../users/infrastructure/users.repository';
 import { UserDocument } from '../../users/domain/user.entity';
-import { LikeStatus } from '../../likes/api/dto/output/likesViewModel';
+import { LikeStatus } from '../../likes/api/dto/output/likesViewDto';
 
 @Injectable()
 export class CommentsService {
@@ -12,13 +12,13 @@ export class CommentsService {
        private readonly usersRepository: UsersRepository,
     ) {}
 
-    async getComment(commentId: string): Promise<CommentsViewModel> | null {
+    async getComment(commentId: string): Promise<CommentsViewDto> | null {
         const foundComment = await this.commentsRepository.getComment(commentId)
         if (!foundComment) {
             return null
         }
         const foundUser: UserDocument = await this.usersRepository.findUser(foundComment.userId)
-        const mappedComment: CommentsViewModel = {
+        const mappedComment: CommentsViewDto = {
             id: foundComment.id,
             content: foundComment.content,
             createdAt: foundComment.createdAt,

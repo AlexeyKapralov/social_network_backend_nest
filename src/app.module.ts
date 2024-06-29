@@ -52,7 +52,6 @@ const PostsProviders = [
             appSettings.env.isTesting()
             ? appSettings.api.MONGO_CONNECTION_URI_FOR_TESTS
             : appSettings.api.MONGO_CONNECTION_URI,
-            // { dbName: 'nest-test' }
             // 'mongodb+srv://admin:6XeshSKaryTj@cluster0.n2nwife.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
             //     dbName: 'nest-test'
             // }

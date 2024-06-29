@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Blog, BlogModelType } from '../domain/blogs.entity';
 import { InjectModel } from '@nestjs/mongoose';
-import { BlogInputModel } from '../api/dto/input/blogInput.model';
+import { BlogInputDto } from '../api/dto/input/blogInput.dto';
 import { PostsRepository } from '../../posts/repository/posts.repository';
 import { PostsQueryRepository } from '../../posts/repository/postsQuery.repository';
 
@@ -17,7 +17,7 @@ export class BlogsRepository {
         return await this.blogModel.create(blog);
     }
 
-    async updateBlog(blogId: string, updateData: BlogInputModel) {
+    async updateBlog(blogId: string, updateData: BlogInputDto) {
         return this.blogModel.updateOne(
             { _id: blogId, isDeleted: false },
             {

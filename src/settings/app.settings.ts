@@ -55,8 +55,7 @@ class APISettings {
 
         // Database
         this.MONGO_CONNECTION_URI =
-            envVariables.MONGO_CONNECTION_URI ?? 'mongodb+srv://admin:6XeshSKaryTj@cluster0.n2nwife.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-        // envVariables.MONGO_CONNECTION_URI ?? 'mongodb://localhost/nest';
+            envVariables.MONGO_CONNECTION_URI ?? 'mongodb+srv://admin:6XeshSKaryTj@cluster0.n2nwife.mongodb.net/nest-test?retryWrites=true&w=majority&appName=Cluster0';
         this.MONGO_CONNECTION_URI_FOR_TESTS =
             envVariables.MONGO_CONNECTION_URI_FOR_TESTS ?? 'mongodb://localhost/test'
     }

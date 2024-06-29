@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PostDocument } from '../domain/posts.entity';
-import { PostInputModel } from '../api/dto/input/postInput.model';
-import { LikeStatus } from '../../likes/api/dto/output/likesViewModel';
+import { PostInputDto } from '../api/dto/input/postInput.dto';
+import { LikeStatus } from '../../likes/api/dto/output/likesViewDto';
 import { BlogsQueryRepository } from '../../blogs/infrastructure/blogsQuery.repository';
 import { PostsRepository } from '../repository/posts.repository';
 import { PostsQueryRepository } from '../repository/postsQuery.repository';
-import { PostsViewModel } from '../api/dto/output/extendedLikesInfoView.model';
+import { PostsViewDto } from '../api/dto/output/extendedLikesInfoView.dto';
 
 @Injectable()
 export class PostsService {
@@ -16,7 +16,7 @@ export class PostsService {
     ) {
     }
 
-    async createPost(postInputData: PostInputModel): Promise<PostsViewModel> {
+    async createPost(postInputData: PostInputDto): Promise<PostsViewDto> {
         const foundBlog = await this.blogsQueryRepository.findBlog(postInputData.blogId)
         const post = {
             title: postInputData.title,
@@ -35,7 +35,7 @@ export class PostsService {
 
     }
 
-    async updatePost(postId: string, updateData: PostInputModel) {
+    async updatePost(postId: string, updateData: PostInputDto) {
         const isUpdatedPost = await this.postsRepository.updatePost(postId, updateData)
         return isUpdatedPost.modifiedCount > 0
     }

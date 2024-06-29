@@ -1,6 +1,6 @@
 import { Post, PostDocument, PostModelType } from '../domain/posts.entity';
 import { InjectModel } from '@nestjs/mongoose';
-import { PostsViewModel } from '../api/dto/output/extendedLikesInfoView.model';
+import { PostsViewDto } from '../api/dto/output/extendedLikesInfoView.dto';
 import { UserViewDto } from '../../users/api/dto/output/userViewDto';
 import { Paginator } from '../../../common/dto/paginator.dto';
 import { QueryDto } from '../../../common/dto/query.dto';
@@ -24,7 +24,7 @@ export class PostsQueryRepository {
             { $limit: query.pageSize },
         ]).exec();
 
-        let mappedPosts: PostsViewModel[] = [];
+        let mappedPosts: PostsViewDto[] = [];
         posts.map(post => {
                 mappedPosts.push({
                     id: post._id.toString(),
@@ -44,7 +44,7 @@ export class PostsQueryRepository {
             },
         );
 
-        const postsWithPaginate: Paginator<PostsViewModel> = {
+        const postsWithPaginate: Paginator<PostsViewDto> = {
             pagesCount: Math.ceil(countPosts / query.pageSize),
             page: query.pageNumber,
             pageSize: query.pageSize,
@@ -69,7 +69,7 @@ export class PostsQueryRepository {
             { $limit: query.pageSize },
         ]).exec();
 
-        let mappedPosts: PostsViewModel[] = [];
+        let mappedPosts: PostsViewDto[] = [];
         posts.map(post => {
                 mappedPosts.push({
                     id: post._id.toString(),
@@ -89,7 +89,7 @@ export class PostsQueryRepository {
             },
         );
 
-        const postsWithPaginate: Paginator<PostsViewModel> = {
+        const postsWithPaginate: Paginator<PostsViewDto> = {
             pagesCount: Math.ceil(countPosts / query.pageSize),
             page: query.pageNumber,
             pageSize: query.pageSize,
@@ -100,7 +100,7 @@ export class PostsQueryRepository {
         return postsWithPaginate;
     }
 
-    async findPost(postId: string): Promise<PostsViewModel> {
+    async findPost(postId: string): Promise<PostsViewDto> {
         const post = await this.postModel.findOne(
             { _id: postId, isDeleted: false },
             {

@@ -1,8 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { ExtendedLikesInfoViewModel } from '../api/dto/output/extendedLikesInfoView.model';
+import { ExtendedLikesInfoViewDto } from '../api/dto/output/extendedLikesInfoView.dto';
 import { HydratedDocument, Model } from 'mongoose';
 import { BlogViewModel } from '../../blogs/api/dto/output/blogView.model';
-import { LikeStatus } from '../../likes/api/dto/output/likesViewModel';
+import { LikeStatus } from '../../likes/api/dto/output/likesViewDto';
 
 @Schema()
 export class Post {

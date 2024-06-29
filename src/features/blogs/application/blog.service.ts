@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { BlogInputModel } from '../api/dto/input/blogInput.model';
+import { BlogInputDto } from '../api/dto/input/blogInput.dto';
 import { BlogsRepository } from '../infrastructure/blogs.repository';
 import { Blog } from '../domain/blogs.entity';
 import { BlogsQueryRepository } from '../infrastructure/blogsQuery.repository';
 import { QueryDto } from '../../../common/dto/query.dto';
-import { PostInputModel } from '../../posts/api/dto/input/postInput.model';
-import { PostsViewModel } from '../../posts/api/dto/output/extendedLikesInfoView.model';
-import { LikeStatus } from '../../likes/api/dto/output/likesViewModel';
-import { BlogPostInputModel } from '../api/dto/input/blogPostInputModel';
+import { PostInputDto } from '../../posts/api/dto/input/postInput.dto';
+import { PostsViewDto } from '../../posts/api/dto/output/extendedLikesInfoView.dto';
+import { LikeStatus } from '../../likes/api/dto/output/likesViewDto';
+import { BlogPostInputDto } from '../api/dto/input/blogPostInputDto';
 import { PostsRepository } from '../../posts/repository/posts.repository';
 import { PostsQueryRepository } from '../../posts/repository/postsQuery.repository';
 
@@ -19,7 +19,7 @@ export class BlogService {
         private readonly postsQueryRepository: PostsQueryRepository,
     ) {}
 
-    async createBlog(blogBody: BlogInputModel) {
+    async createBlog(blogBody: BlogInputDto) {
         //todo правильно ли здесь создавать все поля для новой записи
         const blog: Blog = {
             name: blogBody.name,
@@ -32,7 +32,7 @@ export class BlogService {
         return await this.blogRepository.createBlog(blog)
     }
 
-    async createPostForBlog(blogId: string, blogPostBody: BlogPostInputModel): Promise<PostsViewModel> | null {
+    async createPostForBlog(blogId: string, blogPostBody: BlogPostInputDto): Promise<PostsViewDto> | null {
 
         const foundBlog = await this.blogRepository.findBlog(blogId)
         if (!foundBlog) {
@@ -54,7 +54,7 @@ export class BlogService {
         return await this.postsQueryRepository.findPost(createdPost._id.toString())
     }
 
-    async updateBlog(blogId: string, updateData: BlogInputModel) {
+    async updateBlog(blogId: string, updateData: BlogInputDto) {
         const isUpdatedBlog = await this.blogRepository.updateBlog(blogId, updateData)
         return isUpdatedBlog.modifiedCount > 0
     }
