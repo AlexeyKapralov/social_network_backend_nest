@@ -4,8 +4,6 @@ import { UserInputDto } from '../api/dto/input/userInputDto';
 
 @Schema()
 export class User {
-    _id: mongoose.ObjectId
-
     @Prop()
     login: string;
 
@@ -18,33 +16,47 @@ export class User {
     @Prop()
     createdAt: string;
 
-    @Prop( )
-    isDeleted: boolean
+    @Prop()
+    isDeleted: boolean;
+
+    @Prop()
+    confirmationCode: string;
+
+    @Prop()
+    isConfirmed: boolean;
 
     setLogin(newLogin: string) {
-        this.login = newLogin
+        this.login = newLogin;
     }
 
-    static createUser(userBody: UserInputDto) {
-        // const user = {
-        //     email: userBody.email,
-        //     createdAt: new Date().toISOString(),
-        //     login: userBody.login
-        // }
-        // new User(user)
-        return true
+    static createUser(userBody: UserInputDto, passHash: string, confirmationCode: string) {
+        const user = new this()
+
+        user.email = userBody.email;
+        user.createdAt = new Date().toISOString();
+        user.password = passHash;
+        user.login = userBody.login;
+        user.isDeleted = false;
+        user.isConfirmed = false;
+        user.confirmationCode = confirmationCode;
+
+        return user
     }
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
 
 UserSchema.methods = {
-    setLogin: User.prototype.setLogin
+    setLogin: User.prototype.setLogin,
+};
+
+UserSchema.statics = {
+    createUser: User.createUser
 }
 
 export type UserStaticType = {
-    createUser: () => boolean
-}
+    createUser: (userBody: UserInputDto, passHash: string, confirmationCode: string) => UserDocument;
+};
 
 export type UserDocument = HydratedDocument<User>;
-export type UserModelType = Model<UserDocument> & UserStaticType
+export type UserModelType = Model<UserDocument> & UserStaticType;

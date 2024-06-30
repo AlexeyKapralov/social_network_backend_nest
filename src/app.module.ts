@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Provider } from '@nestjs/common';
 import { AppService } from './app.service';
 import { UsersController } from './features/users/api/users.controller';
 import { UsersService } from './features/users/application/users.service';
@@ -22,28 +22,58 @@ import { CommentsRepository } from './features/comments/infrastructure/comments.
 import { CommentsController } from './features/comments/api/comments.controller';
 import { Comment, CommentSchema } from './features/comments/domain/comment.entity';
 import { appSettings } from './settings/app.settings';
+import { IsUniqueLoginConstraint } from './common/decorators/validate/uniqueLogin.decorator';
+import { IsUniqueEmailConstraint } from './common/decorators/validate/uniqueEmail.decorator';
+import { CryptoService } from './base/services/crypto.service';
+import { AuthController } from './features/auth/api/dto/auth.controller';
+import { AuthService } from './features/auth/application/auth.service';
+import { JwtService } from './base/services/jwt.service';
+import { EmailService } from './base/services/email.service';
+import { IsExistConfirmationCodeConstraint } from './common/decorators/validate/isExistConfirmedCode.decorator';
+import {
+    IsExistEmailAndNotConfirmedCodeConstraint
+} from './common/decorators/validate/isExistEmailAndNotConfirmedCode.decorator';
+import { IsExistEmailConstraint } from './common/decorators/validate/isExistEmail.decorator';
 
-const CommentsProviders = [
+const AuthProviders: Provider[] = [
+    AuthService
+]
+
+const CommentsProviders: Provider[] = [
     CommentsService,
     CommentsRepository
 ]
 
-const UsersProviders = [
+const UsersProviders: Provider[] = [
     UsersService,
     UsersRepository,
     UsersQueryRepository
 ]
 
-const BlogsProviders = [
+const BlogsProviders: Provider[] = [
     BlogService,
     BlogsRepository,
     BlogsQueryRepository
 ]
 
-const PostsProviders = [
+const PostsProviders: Provider[] = [
     PostsService,
     PostsRepository,
     PostsQueryRepository
+]
+
+const decorators: Provider[] = [
+    IsUniqueLoginConstraint,
+    IsUniqueEmailConstraint,
+    IsExistConfirmationCodeConstraint,
+    IsExistEmailAndNotConfirmedCodeConstraint,
+    IsExistEmailConstraint
+]
+
+const services: Provider[] = [
+    CryptoService,
+    JwtService,
+    EmailService
 ]
 
 @Module({
@@ -76,7 +106,23 @@ const PostsProviders = [
         ]),
 
     ],
-    controllers: [AppController, UsersController, BlogsController, PostsController, CommentsController],
-    providers: [AppService, ...UsersProviders, ...BlogsProviders, ...PostsProviders, ...CommentsProviders],
+    controllers: [
+        AppController,
+        UsersController,
+        BlogsController,
+        PostsController,
+        CommentsController,
+        AuthController
+    ],
+    providers: [
+        AppService,
+        ...UsersProviders,
+        ...BlogsProviders,
+        ...PostsProviders,
+        ...CommentsProviders,
+        ...AuthProviders,
+        ...decorators,
+        ...services
+    ],
 })
 export class AppModule {}

@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, Get, HttpStatus, Param, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpStatus, Param, ParseArrayPipe, Post, Req, Res } from '@nestjs/common';
 import { UsersService } from '../application/users.service';
 import { UserInputDto } from './dto/input/userInputDto';
 import { Request, Response } from 'express';
 import { QueryDto } from '../../../common/dto/query.dto';
 import { UsersQueryRepository } from '../infrastructure/usersQuery.repository';
+import { IsUserExistPipe } from '../../../common/pipes/isUserExist.pipe';
 
 @Controller('users')
 export class UsersController {
@@ -52,7 +53,7 @@ export class UsersController {
 
     @Delete(':userId')
     async deleteUser(
-        @Param('userId') userId: string,
+        @Param('userId', IsUserExistPipe) userId: string,
         @Res({passthrough: true}) res: Response,
     ) {
         const isDeleteUser = await this.usersService.deleteUser(userId)

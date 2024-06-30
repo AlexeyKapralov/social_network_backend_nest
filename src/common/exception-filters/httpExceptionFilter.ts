@@ -9,26 +9,42 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const request = ctx.getRequest<Request>();
         const status = exception.getStatus();
 
-        if (status === HttpStatus.BAD_REQUEST) {
-            const errorsResponse = []
-            const responseBody: any = exception.getResponse()
 
-            responseBody.message.forEach( el => {
-                errorsResponse.push(el)
-            })
-            response
-                .status(status)
-                .json({
-                    errors: errorsResponse,
-                });
-        } else {
-            response
-                .status(status)
-                .json({
-                    statusCode: status,
-                    timestamp: new Date().toISOString(),
-                    path: request.url,
-                });
+        switch (status) {
+            case HttpStatus.BAD_REQUEST:
+                const errorsResponse = []
+                const responseBody: any = exception.getResponse()
+
+                if (Array.isArray(responseBody.message)) {
+                    responseBody.message.forEach((e) =>
+                        errorsResponse.push(e),
+                    );
+                } else {
+                    errorsResponse.push(responseBody.message);
+                }
+
+                response
+                    .status(status)
+                    .json({
+                        errors: errorsResponse,
+                    });
+                break
+
+            case HttpStatus.NOT_FOUND:
+            case HttpStatus.UNAUTHORIZED:
+                response
+                    .status(status)
+                    .send()
+                break
+
+            default:
+                response
+                    .status(status)
+                    .json({
+                        statusCode: status,
+                        timestamp: new Date().toISOString(),
+                        path: request.url,
+                    });
         }
     }
 }

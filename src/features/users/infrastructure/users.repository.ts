@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { UserInputDto } from '../api/dto/input/userInputDto';
-import { User, UserModelType } from '../domain/user.entity';
+import { User, UserDocument, UserModelType } from '../domain/user.entity';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose from 'mongoose';
-import { QueryDto } from '../../../common/dto/query.dto';
+import { RegistrationConfirmationCodeDto } from '../../auth/api/dto/input/registrationConfirmationCode.dto';
+
 
 @Injectable()
 export class UsersRepository {
@@ -11,23 +11,12 @@ export class UsersRepository {
         @InjectModel(User.name) private userModel: UserModelType
     ) {}
 
-    async createUser(userBody: UserInputDto) {
+    async createUser(userBody: UserInputDto, passHash: string, confirmationCode: string) {
 
-        //todo как типизировать, можно ли подсунуть класс User, но у него просит методы, т.е. нужна dto скорее всего или нет?
-        //todo не нужно всё это создавать в модели или здесь норм?
-        const user = {
-            _id: new mongoose.Types.ObjectId(),
-            email: userBody.email,
-            createdAt: new Date().toISOString(),
-            password: userBody.password,
-            login: userBody.login,
-            isDeleted: false
-        }
+        const user = this.userModel.createUser(userBody, passHash, confirmationCode)
 
-        const createdUser = new this.userModel(user)
-
-        await createdUser.save()
-        return createdUser
+        await user.save()
+        return user
     }
 
     async deleteUser(userId: string) {
@@ -37,7 +26,31 @@ export class UsersRepository {
     }
     async findUser(userId: string) {
         return this.userModel.findOne(
-            {_id: userId, isDeleted: false}
-        )
+            { _id: userId, isDeleted: false }
+        );
+    }
+    async findUserByLogin(login: string): Promise<UserDocument> {
+        return this.userModel.findOne({ login: login });
+    }
+
+    async findUserByEmail(email: string): Promise<UserDocument> {
+        return this.userModel.findOne({ email: email });
+    }
+
+    async findUserByEmailAndNotConfirmed(email: string): Promise<UserDocument> {
+        return this.userModel.findOne({ email, isConfirmed: false });
+    }
+
+    async findUserByConfirmationCode(confirmationCode: string): Promise<UserDocument> {
+        return this.userModel.findOne({ confirmationCode, isConfirmed: false });
+    }
+
+    async confirmUserRegistration(confirmationCode: RegistrationConfirmationCodeDto) {
+        const isConfirmed = await this.userModel.updateOne({confirmationCode: confirmationCode.code}, {isConfirmed: true})
+        return isConfirmed.modifiedCount > 0
+    }
+
+    async updateConfirmationCode(email: string, newConfirmationCode: string) {
+        await this.userModel.updateOne({email: email}, {confirmationCode: newConfirmationCode, isConfirmed: false})
     }
 }
