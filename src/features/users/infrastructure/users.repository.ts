@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, Injectable } from '@nestjs/common';
 import { UserInputDto } from '../api/dto/input/userInputDto';
 import { User, UserDocument, UserModelType } from '../domain/user.entity';
 import { InjectModel } from '@nestjs/mongoose';
 import { RegistrationConfirmationCodeDto } from '../../auth/api/dto/input/registrationConfirmationCode.dto';
+import { NewPasswordRecoveryInputDto } from '../../auth/api/dto/input/newPasswordRecoveryInput.dto';
 
 
 @Injectable()
@@ -24,10 +25,10 @@ export class UsersRepository {
         const deletedUser = await this.userModel.updateOne({_id: userId}, {isDeleted: true})
         return deletedUser.modifiedCount > 0
     }
-    async findUser(userId: string) {
+    async findUserById(userId: string) {
         return this.userModel.findOne(
             { _id: userId, isDeleted: false }
-        );
+        ).exec();
     }
     async findUserByLogin(login: string): Promise<UserDocument> {
         return this.userModel.findOne({ login: login });
@@ -52,5 +53,10 @@ export class UsersRepository {
 
     async updateConfirmationCode(email: string, newConfirmationCode: string) {
         await this.userModel.updateOne({email: email}, {confirmationCode: newConfirmationCode, isConfirmed: false})
+    }
+
+    async updatePassword(confirmationCode: string, passwordHash: string) {
+        const isUpdatedPassword = await this.userModel.updateOne({confirmationCode: confirmationCode, isConfirmed: false}, {password: passwordHash})
+        if ( isUpdatedPassword.modifiedCount === 0 ) throw new BadGatewayException()
     }
 }

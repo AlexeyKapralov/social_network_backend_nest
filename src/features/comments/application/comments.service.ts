@@ -17,7 +17,7 @@ export class CommentsService {
         if (!foundComment) {
             return null
         }
-        const foundUser: UserDocument = await this.usersRepository.findUser(foundComment.userId)
+        const foundUser: UserDocument = await this.usersRepository.findUserById(foundComment.userId)
         const mappedComment: CommentsViewDto = {
             id: foundComment.id,
             content: foundComment.content,

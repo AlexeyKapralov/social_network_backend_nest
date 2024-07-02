@@ -16,7 +16,7 @@ export class IsUserExistPipe implements PipeTransform<string, Promise<string>> {
     async transform(value: string, metadata: ArgumentMetadata): Promise<string> {
         let user = null
         try {
-            user = await this.usersRepository.findUser(value)
+            user = await this.usersRepository.findUserById(value)
         } catch {
             throw new NotFoundException('User not found');
         }

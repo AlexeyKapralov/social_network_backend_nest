@@ -12,6 +12,7 @@ import { RegistrationConfirmationCodeDto } from '../api/dto/input/registrationCo
 import { RegistrationEmailResendingDto } from '../api/dto/input/registrationEmailResending.dto';
 import { PasswordRecoveryInputDto } from '../api/dto/input/passwordRecoveryInput.dto';
 import { v4 as uuid} from 'uuid';
+import { NewPasswordRecoveryInputDto } from '../api/dto/input/newPasswordRecoveryInput.dto';
 
 @Injectable()
 export class AuthService {
@@ -45,7 +46,7 @@ export class AuthService {
 
     async registrationUser(userBody: UserInputDto) {
         const user = await this.usersService.createUser(userBody)
-        const userDB: UserDocument = await this.userRepository.findUser(user.id)
+        const userDB: UserDocument = await this.userRepository.findUserById(user.id)
         const html = `
 				 <h1>Thank you for registration</h1>
 				 <p>To finish registration please follow the link below:
@@ -100,5 +101,10 @@ export class AuthService {
                 console.error(`some problems with send confirm code ${e}`)
             }
         }
+    }
+
+    async setNewPassword(newPasswordBody: NewPasswordRecoveryInputDto) {
+        const newPasswordHash = await this.cryptoService.createPasswordHash(newPasswordBody.newPassword)
+        await this.userRepository.updatePassword(newPasswordBody.recoveryCode, newPasswordHash)
     }
 }

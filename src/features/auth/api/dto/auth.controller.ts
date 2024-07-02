@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Res, UsePipes, Headers, Param } from '@nestjs/common';
 import { LoginInputDto } from './input/loginInput.dto';
 import { AuthService } from '../../application/auth.service';
 import { Response } from 'express';
@@ -6,6 +6,9 @@ import { UserInputDto } from '../../../users/api/dto/input/userInputDto';
 import { RegistrationConfirmationCodeDto } from './input/registrationConfirmationCode.dto';
 import { RegistrationEmailResendingDto } from './input/registrationEmailResending.dto';
 import { PasswordRecoveryInputDto } from './input/passwordRecoveryInput.dto';
+import { NewPasswordRecoveryInputDto } from './input/newPasswordRecoveryInput.dto';
+import { NewPasswordPipe } from '../../../../common/pipes/newPassword.pipe';
+import { AccessTokenParsePipe } from '../../../../common/pipes/accessTokenParse.pipe';
 
 @Controller('auth')
 export class AuthController {
@@ -22,6 +25,23 @@ export class AuthController {
         accessToken
             ? res.status(HttpStatus.OK).send(accessToken)
             : res.status(HttpStatus.BAD_REQUEST).send()
+    }
+
+    @Post('password-recovery')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async passwordRecovery(
+        @Body() passwordRecoveryInputBody: PasswordRecoveryInputDto,
+    ) {
+        await this.authService.passwordRecovery(passwordRecoveryInputBody)
+    }
+
+    @Post('new-password')
+    @UsePipes(NewPasswordPipe)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async newPassword(
+        @Body() newPasswordBody: NewPasswordRecoveryInputDto,
+    ) {
+        await this.authService.setNewPassword(newPasswordBody)
     }
 
     @Post('registration')
@@ -49,11 +69,10 @@ export class AuthController {
         await this.authService.resendCode(registrationEmailResendingBody)
     }
 
-    @Post('password-recovery')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    async passwordRecovery(
-        @Body() passwordRecoveryInputBody: PasswordRecoveryInputDto,
+    @Get('me')
+    async getCurrentUser(
+        @Headers('authorization')  accessToken: string
     ) {
-        await this.authService.passwordRecovery(passwordRecoveryInputBody)
+        return accessToken
     }
 }
