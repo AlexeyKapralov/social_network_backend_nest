@@ -1,10 +1,23 @@
-import { Body, Controller, Delete, Get, HttpStatus, Param, ParseArrayPipe, Post, Req, Res } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpStatus,
+    Param,
+    ParseArrayPipe,
+    Post,
+    Req,
+    Res,
+    UseGuards,
+} from '@nestjs/common';
 import { UsersService } from '../application/users.service';
 import { UserInputDto } from './dto/input/userInputDto';
 import { Request, Response } from 'express';
 import { QueryDto } from '../../../common/dto/query.dto';
 import { UsersQueryRepository } from '../infrastructure/usersQuery.repository';
 import { IsUserExistPipe } from '../../../common/pipes/isUserExist.pipe';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('users')
 export class UsersController {
@@ -13,6 +26,7 @@ export class UsersController {
         private readonly usersQueryRepository: UsersQueryRepository
     ) {}
 
+    @UseGuards(AuthGuard('basic')) //можно так, а можно создать отдельный guard, который implement этот AuthGuard
     @Get()
     async getUsers(
         @Req() req: Request<{}, {}, {}, QueryDto>
@@ -41,7 +55,7 @@ export class UsersController {
     // getUser(@Param('id') id: string) {
     //     return [{id: 1}, {id: 2}].find(a => a.id === +id)
     // }
-
+    @UseGuards(AuthGuard('basic'))
     @Post()
     async createUser(
         @Body() userBody: UserInputDto,
@@ -51,6 +65,7 @@ export class UsersController {
         createdUser ? res.status(HttpStatus.CREATED).send(createdUser) : res.status(HttpStatus.BAD_REQUEST)
     }
 
+    @UseGuards(AuthGuard('basic'))
     @Delete(':userId')
     async deleteUser(
         @Param('userId', IsUserExistPipe) userId: string,

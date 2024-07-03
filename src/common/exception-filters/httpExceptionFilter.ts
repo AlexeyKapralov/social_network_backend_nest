@@ -11,6 +11,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
 
         switch (status) {
+
             case HttpStatus.BAD_REQUEST:
                 const errorsResponse = []
                 const responseBody: any = exception.getResponse()
@@ -25,13 +26,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
                 response
                     .status(status)
-                    .json({
-                        errors: errorsResponse,
+                    .send({
+                        errorsMessages: errorsResponse,
                     });
                 break
 
-            case HttpStatus.NOT_FOUND:
             case HttpStatus.UNAUTHORIZED:
+            case HttpStatus.NOT_FOUND:
                 response
                     .status(status)
                     .send()
@@ -40,7 +41,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
             default:
                 response
                     .status(status)
-                    .json({
+                    .send({
                         statusCode: status,
                         timestamp: new Date().toISOString(),
                         path: request.url,

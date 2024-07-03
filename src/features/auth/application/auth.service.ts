@@ -1,8 +1,7 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { LoginInputDto } from '../api/dto/input/loginInput.dto';
 import { UsersRepository } from '../../users/infrastructure/users.repository';
 import { CryptoService } from '../../../base/services/crypto.service';
-import { JwtService } from '../../../base/services/jwt.service';
 import { LoginSuccessTokenViewDto } from '../api/dto/output/LoginSuccessTokenView.dto';
 import { UserInputDto } from '../../users/api/dto/input/userInputDto';
 import { EmailService } from '../../../base/services/email.service';
@@ -13,6 +12,7 @@ import { RegistrationEmailResendingDto } from '../api/dto/input/registrationEmai
 import { PasswordRecoveryInputDto } from '../api/dto/input/passwordRecoveryInput.dto';
 import { v4 as uuid} from 'uuid';
 import { NewPasswordRecoveryInputDto } from '../api/dto/input/newPasswordRecoveryInput.dto';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
@@ -20,17 +20,21 @@ export class AuthService {
         private readonly userRepository: UsersRepository,
         private readonly usersService: UsersService,
         private readonly cryptoService: CryptoService,
-        private readonly jwtService: JwtService,
-        private readonly emailService: EmailService
+        private readonly emailService: EmailService,
+        private readonly jwtService: JwtService
     ) {}
 
     //todo возвращать должен какой-то общий interlayer
     async authUser(authBody: LoginInputDto): Promise<LoginSuccessTokenViewDto | null> {
 
-        const user = await Promise.any([
-            this.userRepository.findUserByLogin(authBody.loginOrEmail),
-            this.userRepository.findUserByEmail(authBody.loginOrEmail)
-        ])
+        // const user = await Promise.any([
+        //     this.userRepository.findUserByLogin(authBody.loginOrEmail),
+        //     this.userRepository.findUserByEmail(authBody.loginOrEmail)
+        // ])
+
+        const user1 = await this.userRepository.findUserByLogin(authBody.loginOrEmail)
+        const user2 = await this.userRepository.findUserByEmail(authBody.loginOrEmail)
+        const user = user1 || user2
 
         if (!user) {
             throw new UnauthorizedException()
@@ -39,7 +43,10 @@ export class AuthService {
         const isValidPassword: boolean = await this.cryptoService.comparePasswordsHash(authBody.password, user.password)
 
         if (isValidPassword) {
-            return this.jwtService.createAccessToken(user._id.toString())
+            const userId = user._id.toString()
+            //todo переписать секрет и время жизни токена
+            const accessToken = this.jwtService.sign( {userId})
+            return {accessToken: accessToken}
         }
         return null
     }
@@ -65,12 +72,16 @@ export class AuthService {
 
     async resendCode(registrationEmailResendingBody: RegistrationEmailResendingDto) {
         const user = await this.userRepository.findUserByEmail(registrationEmailResendingBody.email)
+
         if (!user) throw new NotFoundException()
+
+        const newConfirmationCode = uuid()
+        await this.userRepository.updateConfirmationCode(user.email, newConfirmationCode)
 
         const html = `
 				 <h1>Thank you for registration</h1>
 				 <p>To finish registration please follow the link below:
-                     <a href='https://ab.com?code=${user.confirmationCode}'>complete registration</a>
+                     <a href='https://ab.com?code=${newConfirmationCode}'>complete registration</a>
 				 </p>
 			`
 

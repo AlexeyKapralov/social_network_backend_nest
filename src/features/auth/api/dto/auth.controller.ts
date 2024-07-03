@@ -1,4 +1,16 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Res, UsePipes, Headers, Param } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Post,
+    Res,
+    UsePipes,
+    Headers,
+    Param,
+    UseGuards, Request,
+} from '@nestjs/common';
 import { LoginInputDto } from './input/loginInput.dto';
 import { AuthService } from '../../application/auth.service';
 import { Response } from 'express';
@@ -8,23 +20,25 @@ import { RegistrationEmailResendingDto } from './input/registrationEmailResendin
 import { PasswordRecoveryInputDto } from './input/passwordRecoveryInput.dto';
 import { NewPasswordRecoveryInputDto } from './input/newPasswordRecoveryInput.dto';
 import { NewPasswordPipe } from '../../../../common/pipes/newPassword.pipe';
-import { AccessTokenParsePipe } from '../../../../common/pipes/accessTokenParse.pipe';
+import { LocalAuthGuard } from '../../guards/local-auth.guard';
+import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
+import { CurrentUserId } from '../decorators/current-user.param.decorator';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) {
-    }
+    constructor(private readonly authService: AuthService) {}
 
+    @UseGuards(LocalAuthGuard)
     @Post('login')
     async loginUser(
         @Body() authBody: LoginInputDto,
-        @Res({passthrough: true}) res: Response
+        @Res({ passthrough: true }) res: Response,
     ) {
-        const accessToken = await this.authService.authUser(authBody)
+        const accessToken = await this.authService.authUser(authBody);
 
         accessToken
             ? res.status(HttpStatus.OK).send(accessToken)
-            : res.status(HttpStatus.BAD_REQUEST).send()
+            : res.status(HttpStatus.BAD_REQUEST).send();
     }
 
     @Post('password-recovery')
@@ -32,47 +46,48 @@ export class AuthController {
     async passwordRecovery(
         @Body() passwordRecoveryInputBody: PasswordRecoveryInputDto,
     ) {
-        await this.authService.passwordRecovery(passwordRecoveryInputBody)
+        await this.authService.passwordRecovery(passwordRecoveryInputBody);
     }
 
     @Post('new-password')
     @UsePipes(NewPasswordPipe)
     @HttpCode(HttpStatus.NO_CONTENT)
-    async newPassword(
-        @Body() newPasswordBody: NewPasswordRecoveryInputDto,
-    ) {
-        await this.authService.setNewPassword(newPasswordBody)
+    async newPassword(@Body() newPasswordBody: NewPasswordRecoveryInputDto) {
+        await this.authService.setNewPassword(newPasswordBody);
     }
 
     @Post('registration')
     @HttpCode(HttpStatus.NO_CONTENT)
-    async registrationUser(
-        @Body() userBody: UserInputDto,
-    ) {
-        await this.authService.registrationUser(userBody)
+    async registrationUser(@Body() userBody: UserInputDto) {
+        await this.authService.registrationUser(userBody);
     }
 
     @Post('registration-confirmation')
     async registrationConfirmation(
         @Body() confirmationCode: RegistrationConfirmationCodeDto,
-        @Res({passthrough: true}) res: Response
+        @Res({ passthrough: true }) res: Response,
     ) {
-        const isConfirmed = await this.authService.confirmationCode(confirmationCode)
-        isConfirmed ? res.status(HttpStatus.NO_CONTENT) : res.status(HttpStatus.NOT_FOUND)
+        const isConfirmed =
+            await this.authService.confirmationCode(confirmationCode);
+        isConfirmed
+            ? res.status(HttpStatus.NO_CONTENT)
+            : res.status(HttpStatus.NOT_FOUND);
     }
 
     @Post('registration-email-resending')
-    @HttpCode(HttpStatus.OK)
+    @HttpCode(HttpStatus.NO_CONTENT)
     async resendConfirmationCode(
-        @Body() registrationEmailResendingBody: RegistrationEmailResendingDto
+        @Body() registrationEmailResendingBody: RegistrationEmailResendingDto,
     ) {
-        await this.authService.resendCode(registrationEmailResendingBody)
+        await this.authService.resendCode(registrationEmailResendingBody);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get('me')
     async getCurrentUser(
-        @Headers('authorization')  accessToken: string
+        // @Headers('authorization')  accessToken: string
+        @CurrentUserId() currentUserId: string,
     ) {
-        return accessToken
+        return currentUserId
     }
 }

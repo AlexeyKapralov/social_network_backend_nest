@@ -31,32 +31,32 @@ export class UsersRepository {
         ).exec();
     }
     async findUserByLogin(login: string): Promise<UserDocument> {
-        return this.userModel.findOne({ login: login });
+        return this.userModel.findOne({ login: login, isDeleted: false });
     }
 
     async findUserByEmail(email: string): Promise<UserDocument> {
-        return this.userModel.findOne({ email: email });
+        return this.userModel.findOne({ email: email, isDeleted: false });
     }
 
     async findUserByEmailAndNotConfirmed(email: string): Promise<UserDocument> {
-        return this.userModel.findOne({ email, isConfirmed: false });
+        return this.userModel.findOne({ email, isDeleted: false, isConfirmed: false });
     }
 
     async findUserByConfirmationCode(confirmationCode: string): Promise<UserDocument> {
-        return this.userModel.findOne({ confirmationCode, isConfirmed: false });
+        return this.userModel.findOne({ confirmationCode, isDeleted: false, isConfirmed: false });
     }
 
     async confirmUserRegistration(confirmationCode: RegistrationConfirmationCodeDto) {
-        const isConfirmed = await this.userModel.updateOne({confirmationCode: confirmationCode.code}, {isConfirmed: true})
+        const isConfirmed = await this.userModel.updateOne({confirmationCode: confirmationCode.code, isDeleted: false}, {isConfirmed: true})
         return isConfirmed.modifiedCount > 0
     }
 
     async updateConfirmationCode(email: string, newConfirmationCode: string) {
-        await this.userModel.updateOne({email: email}, {confirmationCode: newConfirmationCode, isConfirmed: false})
+        await this.userModel.updateOne({email: email, isDeleted: false}, {confirmationCode: newConfirmationCode, isConfirmed: false})
     }
 
     async updatePassword(confirmationCode: string, passwordHash: string) {
-        const isUpdatedPassword = await this.userModel.updateOne({confirmationCode: confirmationCode, isConfirmed: false}, {password: passwordHash})
+        const isUpdatedPassword = await this.userModel.updateOne({confirmationCode: confirmationCode, isConfirmed: false, isDeleted: false}, {password: passwordHash})
         if ( isUpdatedPassword.modifiedCount === 0 ) throw new BadGatewayException()
     }
 }

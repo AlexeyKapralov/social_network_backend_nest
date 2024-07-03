@@ -27,13 +27,17 @@ import { IsUniqueEmailConstraint } from './common/decorators/validate/uniqueEmai
 import { CryptoService } from './base/services/crypto.service';
 import { AuthController } from './features/auth/api/dto/auth.controller';
 import { AuthService } from './features/auth/application/auth.service';
-import { JwtService } from './base/services/jwt.service';
 import { EmailService } from './base/services/email.service';
 import { IsExistConfirmationCodeConstraint } from './common/decorators/validate/isExistConfirmedCode.decorator';
 import {
     IsExistEmailAndNotConfirmedCodeConstraint
 } from './common/decorators/validate/isExistEmailAndNotConfirmedCode.decorator';
 import { IsExistEmailConstraint } from './common/decorators/validate/isExistEmail.decorator';
+import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
+import { LocalStrategy } from './features/auth/strategies/local.strategy';
+import { JwtStrategy } from './features/auth/strategies/jwt.strategy';
+import { BasicStrategy } from './features/auth/strategies/basic.strategy';
 
 const AuthProviders: Provider[] = [
     AuthService
@@ -72,12 +76,23 @@ const decorators: Provider[] = [
 
 const services: Provider[] = [
     CryptoService,
-    JwtService,
     EmailService
+]
+
+const strategies: Provider[] = [
+    LocalStrategy,
+    JwtStrategy,
+    BasicStrategy
 ]
 
 @Module({
     imports: [
+        PassportModule,
+        JwtModule.register({
+            //todo переписать чтобы здесь секрет не использовался в открытую
+            secret: 'secret',
+            signOptions: { expiresIn: '10m' }
+        }),
         MongooseModule.forRoot(
             appSettings.env.isTesting()
             ? appSettings.api.MONGO_CONNECTION_URI_FOR_TESTS
@@ -122,7 +137,8 @@ const services: Provider[] = [
         ...CommentsProviders,
         ...AuthProviders,
         ...decorators,
-        ...services
+        ...services,
+        ...strategies
     ],
 })
 export class AppModule {}
