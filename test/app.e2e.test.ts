@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { agent as request } from 'supertest';
 import { AppModule } from '../src/app.module';
-import { applyAppSettings } from '../src/settings/apply.app.settings';
+import { applyAppSettings } from '../src/settings/apply-app-settings';
 import { exhaustiveTypeException } from 'tsconfig-paths/lib/try-path';
 import * as stream from 'node:stream';
 import { aDescribe } from './utils/aDescribe';

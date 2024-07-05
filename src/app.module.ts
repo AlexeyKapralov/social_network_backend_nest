@@ -21,7 +21,6 @@ import { CommentsService } from './features/comments/application/comments.servic
 import { CommentsRepository } from './features/comments/infrastructure/comments.repository';
 import { CommentsController } from './features/comments/api/comments.controller';
 import { Comment, CommentSchema } from './features/comments/domain/comment.entity';
-import { appSettings } from './settings/app.settings';
 import { IsUniqueLoginConstraint } from './common/decorators/validate/uniqueLogin.decorator';
 import { IsUniqueEmailConstraint } from './common/decorators/validate/uniqueEmail.decorator';
 import { CryptoService } from './base/services/crypto.service';
@@ -38,6 +37,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { LocalStrategy } from './features/auth/strategies/local.strategy';
 import { JwtStrategy } from './features/auth/strategies/jwt.strategy';
 import { BasicStrategy } from './features/auth/strategies/basic.strategy';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import configuration, { ConfigurationType, validate } from './settings/env/configuration';
 
 const AuthProviders: Provider[] = [
     AuthService
@@ -87,16 +88,40 @@ const strategies: Provider[] = [
 
 @Module({
     imports: [
+        ConfigModule.forRoot({
+            isGlobal: true,
+            load: [configuration],
+            validate: validate,
+            envFilePath: ['.env.local', /*'.env.development',*/ ],
+        }),
         PassportModule,
         JwtModule.register({
             //todo переписать чтобы здесь секрет не использовался в открытую
             secret: 'secret',
             signOptions: { expiresIn: '10m' }
         }),
-        MongooseModule.forRoot(
-            appSettings.env.isTesting()
-            ? appSettings.api.MONGO_CONNECTION_URI_FOR_TESTS
-            : appSettings.api.MONGO_CONNECTION_URI,
+        MongooseModule.forRootAsync({
+                useFactory: (configService: ConfigService<ConfigurationType>) => {
+                    const environmentSettings = configService.get('environmentSettings', {
+                        infer: true,
+                    });
+                    const databaseSettings = configService.get('databaseSettings', {
+                        infer: true,
+                    });
+                    const uri = environmentSettings.isTesting
+                        ? databaseSettings.MONGO_CONNECTION_URI_FOR_TESTS
+                        : databaseSettings.MONGO_CONNECTION_URI;
+                    console.log(uri)
+
+                    return {
+                        uri: uri,
+                    };
+                },
+                inject: [ConfigService],
+        }
+            // appSettings.env.isTesting()
+            // ? appSettings.api.MONGO_CONNECTION_URI_FOR_TESTS
+            // : appSettings.api.MONGO_CONNECTION_URI,
             // 'mongodb+srv://admin:6XeshSKaryTj@cluster0.n2nwife.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
             //     dbName: 'nest-test'
             // }

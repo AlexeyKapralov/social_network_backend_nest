@@ -90,4 +90,9 @@ export class AuthController {
     ) {
         return currentUserId
     }
+
+    @Get('alo')
+    allo() {
+        return process.env.MONGO_URI
+    }
 }
