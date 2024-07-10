@@ -1,4 +1,4 @@
-import { LikeDetailsViewDto, LikeStatus } from '../../../../likes/api/dto/output/likesViewDto';
+import { LikeDetailsViewDto, LikeStatus } from '../../../../likes/api/dto/output/likes-view.dto';
 
 export type PostsViewDto = {
     id: string,

@@ -3,7 +3,9 @@ import { CommentsViewDto } from '../api/dto/output/commentsView.dto';
 import { CommentsRepository } from '../infrastructure/comments.repository';
 import { UsersRepository } from '../../users/infrastructure/users.repository';
 import { UserDocument } from '../../users/domain/user.entity';
-import { LikeStatus } from '../../likes/api/dto/output/likesViewDto';
+import { LikeStatus } from '../../likes/api/dto/output/likes-view.dto';
+import { CommentInputDto } from '../api/dto/input/comment-input.dto';
+import { InterlayerNotice, InterLayerStatuses } from '../../../base/models/interlayer';
 
 @Injectable()
 export class CommentsService {
@@ -12,27 +14,71 @@ export class CommentsService {
        private readonly usersRepository: UsersRepository,
     ) {}
 
-    async getComment(commentId: string): Promise<CommentsViewDto> | null {
-        const foundComment = await this.commentsRepository.getComment(commentId)
-        if (!foundComment) {
-            return null
+    async getComment(commentId: string): Promise<InterlayerNotice<CommentsViewDto>> | null {
+        const notice = new InterlayerNotice<CommentsViewDto>
+
+        const comment = await this.commentsRepository.getComment(commentId)
+        if (!comment) {
+            notice.addError('comment was not found', '', InterLayerStatuses.NOT_FOUND)
+            return notice
         }
-        const foundUser: UserDocument = await this.usersRepository.findUserById(foundComment.userId)
+        const user: UserDocument = await this.usersRepository.findUserById(comment.userId)
+        if (!user) {
+            notice.addError('user was not found', '', InterLayerStatuses.NOT_FOUND)
+            return notice
+        }
+
         const mappedComment: CommentsViewDto = {
-            id: foundComment.id,
-            content: foundComment.content,
-            createdAt: foundComment.createdAt,
+            id: comment.id,
+            content: comment.content,
+            createdAt: comment.createdAt,
             commentatorInfo: {
-                userId: foundComment.userId,
-                userLogin: foundUser.login
+                userId: comment.userId,
+                userLogin: user.login
             },
             likesInfo: {
-                likesCount: foundComment.likesCount,
-                dislikesCount: foundComment.dislikesCount,
+                likesCount: comment.likesCount,
+                dislikesCount: comment.dislikesCount,
                 myStatus: LikeStatus.None //todo переписать когда будет авторизация
             }
         }
-        return mappedComment
+        notice.addData(mappedComment)
+        return notice
 
+    }
+
+    async updateComment(userId: string, commentId: string, commentInputDto: CommentInputDto) {
+        const notice = new InterlayerNotice<CommentsViewDto>
+
+        const isUserOwner = await this.commentsRepository.checkIsUserOwnerForComment(userId, commentId)
+        if (!isUserOwner) {
+            notice.addError(`user is not comment's owner`, 'user', InterLayerStatuses.FORBIDDEN)
+            return notice
+        }
+
+        const isUpdateComment = await this.commentsRepository.updateComment(userId, commentId, commentInputDto)
+
+        if (!isUpdateComment) {
+            notice.addError('comment was not updated', 'comment', InterLayerStatuses.NOT_FOUND)
+            return notice
+        }
+        return notice
+    }
+
+    async deleteComment(userId: string, commentId: string) {
+        const notice = new InterlayerNotice
+
+        const isUserOwner = await this.commentsRepository.checkIsUserOwnerForComment(userId, commentId)
+        if (!isUserOwner) {
+            notice.addError('user is not owner for comment', 'user', InterLayerStatuses.FORBIDDEN)
+            return notice
+        }
+        const isDeleteComment = await this.commentsRepository.deleteComment(userId, commentId)
+
+        if (!isDeleteComment) {
+            notice.addError('comment was not deleted', 'comment', InterLayerStatuses.NOT_FOUND)
+            return notice
+        }
+        return notice
     }
 }

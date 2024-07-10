@@ -1,4 +1,4 @@
-import { ExtendedLikesInfoViewDto } from '../../../../posts/api/dto/output/extendedLikesInfoView.dto';
+import { ExtendedLikesInfoViewDto } from '../../../../posts/api/dto/output/extended-likes-info-view.dto';
 
 export type CommentsViewDto = {
     id: string,

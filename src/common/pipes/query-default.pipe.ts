@@ -1,5 +1,4 @@
 import { PipeTransform } from '@nestjs/common';
-import { QueryDto } from '../dto/query.dto';
 
 // export class QueryDefaultPipe implements PipeTransform {
 //     transform(value: any): QueryDto {

@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument, Model } from 'mongoose';
-import { UserInputDto } from '../api/dto/input/userInputDto';
+import { UserInputDto } from '../api/dto/input/user-input.dto';
 
 @Schema()
 export class User {

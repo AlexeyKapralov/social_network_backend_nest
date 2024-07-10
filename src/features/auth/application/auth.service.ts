@@ -3,7 +3,7 @@ import { LoginInputDto } from '../api/dto/input/loginInput.dto';
 import { UsersRepository } from '../../users/infrastructure/users.repository';
 import { CryptoService } from '../../../base/services/crypto.service';
 import { LoginSuccessTokenViewDto } from '../api/dto/output/LoginSuccessTokenView.dto';
-import { UserInputDto } from '../../users/api/dto/input/userInputDto';
+import { UserInputDto } from '../../users/api/dto/input/user-input.dto';
 import { EmailService } from '../../../base/services/email.service';
 import { UsersService } from '../../users/application/users.service';
 import { UserDocument } from '../../users/domain/user.entity';
@@ -13,6 +13,12 @@ import { PasswordRecoveryInputDto } from '../api/dto/input/passwordRecoveryInput
 import { v4 as uuid} from 'uuid';
 import { NewPasswordRecoveryInputDto } from '../api/dto/input/newPasswordRecoveryInput.dto';
 import { JwtService } from '@nestjs/jwt';
+import { CreateUserCommand, CreateUserResultData } from '../../users/application/usecases/create-user.usecase';
+import { InterlayerNotice } from '../../../base/models/interlayer';
+import { CommandBus } from '@nestjs/cqrs';
+import { ConfigService } from '@nestjs/config';
+import { ConfigurationType } from '../../../settings/env/configuration';
+import { ApiSettings } from '../../../settings/env/api-settings';
 
 @Injectable()
 export class AuthService {
@@ -21,21 +27,26 @@ export class AuthService {
         private readonly usersService: UsersService,
         private readonly cryptoService: CryptoService,
         private readonly emailService: EmailService,
-        private readonly jwtService: JwtService
+        private readonly jwtService: JwtService,
+        private readonly commandBus: CommandBus,
+        private readonly configService: ConfigService<ConfigurationType>,
     ) {}
 
     //todo возвращать должен какой-то общий interlayer
-    async authUser(authBody: LoginInputDto): Promise<LoginSuccessTokenViewDto | null> {
+    async authUser(authBody: LoginInputDto): Promise<string | null> {
+
+        //todo почему-то так не работает (ниже закоментированное)
 
         // const user = await Promise.any([
         //     this.userRepository.findUserByLogin(authBody.loginOrEmail),
         //     this.userRepository.findUserByEmail(authBody.loginOrEmail)
         // ])
 
-        const user1 = await this.userRepository.findUserByLogin(authBody.loginOrEmail)
-        const user2 = await this.userRepository.findUserByEmail(authBody.loginOrEmail)
-        const user = user1 || user2
+        const userByLogin = await this.userRepository.findUserByLogin(authBody.loginOrEmail)
+        const userByEmail = await this.userRepository.findUserByEmail(authBody.loginOrEmail)
+        const user = userByLogin || userByEmail
 
+        //todo только контроллер должен выбрасывать exception, это надо переписать
         if (!user) {
             throw new UnauthorizedException()
         }
@@ -43,17 +54,21 @@ export class AuthService {
         const isValidPassword: boolean = await this.cryptoService.comparePasswordsHash(authBody.password, user.password)
 
         if (isValidPassword) {
-            const userId = user._id.toString()
-            //todo переписать секрет и время жизни токена
-            const accessToken = this.jwtService.sign( {userId})
-            return {accessToken: accessToken}
+            return user._id.toString()
         }
         return null
     }
 
     async registrationUser(userBody: UserInputDto) {
-        const user = await this.usersService.createUser(userBody)
-        const userDB: UserDocument = await this.userRepository.findUserById(user.id)
+        const command = new CreateUserCommand(userBody.login, userBody.password, userBody.email)
+        const creatingResult = await this.commandBus.execute<
+            CreateUserCommand, InterlayerNotice<CreateUserResultData>
+        >(command)
+
+        if (creatingResult.hasError()) {
+            throw new BadRequestException(creatingResult.extensions)
+        }
+        const userDB: UserDocument = await this.userRepository.findUserById(creatingResult.data.userId)
         const html = `
 				 <h1>Thank you for registration</h1>
 				 <p>To finish registration please follow the link below:
@@ -66,6 +81,21 @@ export class AuthService {
             console.error(`some problems with send confirm code ${e}`)
         }
     }
+
+    async createTokens (userId, deviceId): Promise< LoginSuccessTokenViewDto & {refreshToken: string}>
+    {
+        const apiSettings = this.configService.get<ApiSettings>('apiSettings')
+        const atLive = apiSettings.ACCESS_TOKEN_EXPIRATION_LIVE
+        const rtLive = apiSettings.REFRESH_TOKEN_EXPIRATION_LIVE
+
+        const accessToken = this.jwtService.sign({userId}, {expiresIn: atLive})
+        const refreshToken = this.jwtService.sign({deviceId}, {expiresIn: rtLive})
+
+        return {
+            accessToken, refreshToken
+        }
+    }
+
     async confirmationCode(confirmationCode: RegistrationConfirmationCodeDto) {
         return await this.userRepository.confirmUserRegistration(confirmationCode)
     }

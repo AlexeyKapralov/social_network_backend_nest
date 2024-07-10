@@ -32,10 +32,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
                 break
 
             case HttpStatus.UNAUTHORIZED:
-            case HttpStatus.NOT_FOUND:
+            case HttpStatus.FORBIDDEN:
                 response
                     .status(status)
                     .send()
+                break
+            case HttpStatus.NOT_FOUND:
+                response
+                    .status(status)
+                    .send('Not Found')
                 break
 
             default:

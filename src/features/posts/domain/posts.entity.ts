@@ -1,8 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { ExtendedLikesInfoViewDto } from '../api/dto/output/extendedLikesInfoView.dto';
+import { ExtendedLikesInfoViewDto } from '../api/dto/output/extended-likes-info-view.dto';
 import { HydratedDocument, Model } from 'mongoose';
 import { BlogViewModel } from '../../blogs/api/dto/output/blogView.model';
-import { LikeStatus } from '../../likes/api/dto/output/likesViewDto';
+import { LikeStatus } from '../../likes/api/dto/output/likes-view.dto';
+import { Device } from '../../devices/domain/device.entity';
 
 @Schema()
 export class Post {
@@ -32,45 +33,59 @@ export class Post {
     dislikesCount: number
 
     @Prop()
-    myStatus: LikeStatus
-
-    @Prop()
     isDeleted: boolean
 
-    // static async create(data: PostDbModel) {
-    //     const p =
-    //     p.title = data.title
-    //     p.shortDescription = data.shortDescription
-    //     p.content = data.content
-    //     p.blogId = data.blogId
-    //     p.blogName = data.blogName
-    //     p.createdAt = data.createdAt
-    //     p.likesCount = data.likesCount
-    //     p.dislikesCount = data.dislikesCount
-    //     p.myStatus = data.myStatus
-    //     return p
-    // }
+    addCountLikes(count: number) {
+        this.likesCount += count
+    }
 
+    addCountDislikes(count: number) {
+        this.dislikesCount += count
+    }
+
+    static createPost(
+        title: string,
+        shortDescription: string,
+        content: string,
+        blogId: string,
+        blogName: string
+    ) {
+        const p = new this()
+        p.title = title
+        p.shortDescription = shortDescription
+        p.content = content
+        p.blogId = blogId
+        p.blogName = blogName
+        p.createdAt = new Date().toISOString()
+        p.likesCount = 0
+        p.dislikesCount = 0
+        p.isDeleted = false
+
+        return p
+    }
+
+}
+
+export type PostsStaticType = {
+    createPost: (
+        title: string,
+        shortDescription: string,
+        content: string,
+        blogId: string,
+        blogName: string
+    ) => PostDocument
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post)
 
-// export type PostDbModel = {
-//     title: string,
-//     shortDescription: string,
-//     content: string,
-//     blogId: string,
-//     blogName: string,
-//     createdAt: string,
-//     likesCount: number,
-//     dislikesCount: number,
-//     myStatus: LikeStatus
-// }
-
-// export type PostsStaticType = {
-//     create: (data: PostDbModel) => Post
-// }
+PostSchema.methods = {
+    addCountLikes: Post.prototype.addCountLikes,
+    addCountDislikes: Post.prototype.addCountDislikes
+}
+PostSchema.statics = {
+    createPost: Post.createPost
+}
 
 export type PostDocument = HydratedDocument<Post>
-export type PostModelType = Model<PostDocument> // & PostsStaticType
+export type PostModelType = Model<PostDocument> & PostsStaticType
 

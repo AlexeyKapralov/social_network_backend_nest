@@ -1,14 +1,16 @@
-import { Body, Controller, Delete, Get, HttpStatus, Param, Post, Put, Query, Res } from '@nestjs/common';
-import { BlogInputDto } from './dto/input/blogInput.dto';
+import { Body, Controller, Delete, Get, HttpStatus, Param, Post, Put, Query, Res, UseGuards } from '@nestjs/common';
+import { BlogInputDto } from './dto/input/blog-input.dto';
 import { BlogService } from '../application/blog.service';
-import { QueryDto } from '../../../common/dto/query.dto';
+import { QueryDtoBase, QueryDtoWithName } from '../../../common/dto/query.dto';
 import { BlogsQueryRepository } from '../infrastructure/blogsQuery.repository';
 import { BlogDocument } from '../domain/blogs.entity';
 import { Response } from 'express';
-import { PostsQueryRepository } from '../../posts/repository/postsQuery.repository';
-import { BlogPostInputDto } from './dto/input/blogPostInputDto';
+import { PostsQueryRepository } from '../../posts/infrastructure/posts-query.repository';
+import { BlogPostInputDto } from './dto/input/blog-post-input.dto';
 import { PostDocument } from '../../posts/domain/posts.entity';
-import { PostsViewDto } from '../../posts/api/dto/output/extendedLikesInfoView.dto';
+import { PostsViewDto } from '../../posts/api/dto/output/extended-likes-info-view.dto';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('blogs')
 export class BlogsController {
@@ -19,6 +21,7 @@ export class BlogsController {
     ) {
     }
 
+    @UseGuards(AuthGuard('basic'))
     @Post()
     async createBlog(
         @Body() blogBody: BlogInputDto,
@@ -27,6 +30,7 @@ export class BlogsController {
         return await this.blogQueryRepository.findBlog(createdBlog._id.toString());
     }
 
+    @UseGuards(AuthGuard('basic'))
     @Post(':blogId/posts')
     async createPostForBlog(
         @Param('blogId') blogId: string,
@@ -39,25 +43,9 @@ export class BlogsController {
 
     @Get()
     async getBlogs(
-        @Query() query: any,
+        @Query() query: QueryDtoWithName,
     ) {
-        let sortDirection;
-        if (query.sortDirection === 'asc') {
-            sortDirection = 1;
-        }
-        if (query.sortDirection === 'desc') {
-            sortDirection = -1;
-        }
-
-        const mappedQuery: Omit<QueryDto, 'searchLoginTerm' | 'searchEmailTerm'> = {
-            sortBy: query.sortBy || 'createdAt',
-            sortDirection: sortDirection || -1,
-            pageNumber: Number(query.pageNumber) || 1,
-            pageSize: Number(query.pageSize) || 10,
-            searchNameTerm: query.searchNameTerm || null,
-        };
-
-        return await this.blogQueryRepository.findBlogs(mappedQuery);
+        return await this.blogQueryRepository.findBlogs(query);
     }
 
     @Get(':blogId')
@@ -70,6 +58,7 @@ export class BlogsController {
         foundedBlog ? res.status(HttpStatus.OK).send(foundedBlog) : res.status(HttpStatus.NOT_FOUND);
     }
 
+    @UseGuards(AuthGuard('basic'))
     @Put(':blogId')
     async updateBlog(
         @Param('blogId') blogId: string,
@@ -80,6 +69,7 @@ export class BlogsController {
         isUpdated ? res.status(HttpStatus.NO_CONTENT) : res.status(HttpStatus.NOT_FOUND)
     }
 
+    @UseGuards(AuthGuard('basic'))
     @Delete(':blogId')
     async deleteBlog(
         @Param('blogId') blogId: string,
@@ -92,23 +82,9 @@ export class BlogsController {
     @Get(':blogId/posts')
     async getPostsForBlog(
         @Param('blogId') blogId: string,
-        @Query() query: any,
+        @Query() query: QueryDtoBase,
         @Res({ passthrough: true }) res: Response
     ) {
-        let sortDirection: number
-        if (query.sortDirection === 'asc') {
-            sortDirection = 1
-        }
-        if (query.sortDirection === 'desc') {
-            sortDirection = -1
-        }
-
-        const mappedQuery: Omit<QueryDto, 'searchLoginTerm' | 'searchEmailTerm' | 'searchNameTerm'> = {
-            sortBy: query.sortBy || 'createdAt',
-            sortDirection: sortDirection || -1,
-            pageNumber: Number(query.pageNumber) || 1,
-            pageSize: Number(query.pageSize) || 10
-        };
 
         const foundBlog = await this.blogQueryRepository.findBlog(blogId)
 
@@ -117,7 +93,7 @@ export class BlogsController {
             return
         }
 
-        const posts = await this.postQueryRepository.findPostsForBlog(mappedQuery, foundBlog.id)
+        const posts = await this.postQueryRepository.findPostsForBlog(query, foundBlog.id)
 
         posts ? res.status(HttpStatus.OK).send(posts) : res.status(HttpStatus.NOT_FOUND)
     }

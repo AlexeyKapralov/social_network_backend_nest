@@ -1,68 +1,80 @@
 import {
+    BadRequestException,
     Body,
     Controller,
     Delete,
     Get,
     HttpStatus,
     Param,
-    ParseArrayPipe,
     Post,
-    Req,
+    Query,
     Res,
     UseGuards,
 } from '@nestjs/common';
 import { UsersService } from '../application/users.service';
-import { UserInputDto } from './dto/input/userInputDto';
-import { Request, Response } from 'express';
-import { QueryDto } from '../../../common/dto/query.dto';
-import { UsersQueryRepository } from '../infrastructure/usersQuery.repository';
-import { IsUserExistPipe } from '../../../common/pipes/isUserExist.pipe';
+import { UserInputDto } from './dto/input/user-input.dto';
+import { Response } from 'express';
+import { UsersQueryRepository } from '../infrastructure/users-query.repository';
+import { IsUserExistPipe } from '../../../common/pipes/is-user-exist.pipe';
 import { AuthGuard } from '@nestjs/passport';
+import { CreateUserCommand, CreateUserResultData } from '../application/usecases/create-user.usecase';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { InterlayerNotice } from '../../../base/models/interlayer';
+import { QueryDtoWithEmailAndLogin } from '../../../common/dto/query.dto';
+import { FindUsersQueryPayload } from '../infrastructure/queries/find-users.query';
+import { Paginator } from '../../../common/dto/paginator.dto';
+import { UserViewDto } from './dto/output/user-view.dto';
 
 @Controller('users')
 export class UsersController {
     constructor(
         private readonly usersService: UsersService,
-        private readonly usersQueryRepository: UsersQueryRepository
+        private readonly usersQueryRepository: UsersQueryRepository,
+        //шина для command
+        private readonly commandBus: CommandBus,
+        //шина для query
+        private readonly queryBus: QueryBus
     ) {}
 
-    @UseGuards(AuthGuard('basic')) //можно так, а можно создать отдельный guard, который implement этот AuthGuard
+    @UseGuards(AuthGuard('basic')) //можно так, а можно создать отдельный guard, который implement этот AuthGuard: @UseGuards(BasicAuthGuard)
     @Get()
     async getUsers(
-        @Req() req: Request<{}, {}, {}, QueryDto>
+        @Query() query: QueryDtoWithEmailAndLogin
     ) {
-        let sortDirection
-        if (req.query.sortDirection === 'asc') {
-            sortDirection = 1
-        }
-        if (req.query.sortDirection === 'desc') {
-            sortDirection = -1
-        }
+        const payload = new FindUsersQueryPayload(
+            query.sortBy,
+            query.sortDirection,
+            query.pageNumber,
+            query.pageSize,
+            query.searchLoginTerm,
+            query.searchEmailTerm
+        )
 
-        const query: Omit<QueryDto, 'searchNameTerm'> = {
-            sortBy: req.query.sortBy || 'createdAt',
-            sortDirection: sortDirection || -1,
-            pageNumber: Number(req.query.pageNumber) || 1,
-            pageSize: Number(req.query.pageSize) || 10,
-            searchEmailTerm: req.query.searchEmailTerm || null,
-            searchLoginTerm: req.query.searchLoginTerm || null
-        };
+        const findResult = await this.queryBus.execute<
+            FindUsersQueryPayload,
+            InterlayerNotice<Paginator<UserViewDto>>
+        >(payload)
 
-        return await this.usersQueryRepository.findUsers(query);
+        return findResult.data
     }
 
-    // @Get(":id")
-    // getUser(@Param('id') id: string) {
-    //     return [{id: 1}, {id: 2}].find(a => a.id === +id)
-    // }
     @UseGuards(AuthGuard('basic'))
     @Post()
     async createUser(
         @Body() userBody: UserInputDto,
-        @Res({passthrough: true}) res: Response
     ) {
-        const createdUser = await this.usersService.createUser(userBody)
-        createdUser ? res.status(HttpStatus.CREATED).send(createdUser) : res.status(HttpStatus.BAD_REQUEST)
+        const command = new CreateUserCommand(userBody.login, userBody.password, userBody.email)
+
+        const createdUser = await this.commandBus.execute<
+            CreateUserCommand, InterlayerNotice<CreateUserResultData>
+        >(command)
+
+        if (createdUser.hasError()) {
+            throw new BadRequestException(createdUser.extensions)
+        }
+
+        return await this.usersQueryRepository.findUserById(createdUser.data.userId)
+
     }
 
     @UseGuards(AuthGuard('basic'))
@@ -74,17 +86,4 @@ export class UsersController {
         const isDeleteUser = await this.usersService.deleteUser(userId)
         isDeleteUser ? res.status(HttpStatus.NO_CONTENT) : res.status(HttpStatus.NOT_FOUND)
     }
-
-
-    // @Delete()
-    // deleteUser(@Param('id') id: string) {
-    //     return
-    // }
-    // @Put()
-    // updateUser(@Param('id') id: string, @Body() model: InputUserModelType) {
-    //     return {
-    //         id: id,
-    //         model: model
-    //     }
-    // }
 }

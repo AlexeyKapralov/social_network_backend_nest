@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { PostDocument } from '../domain/posts.entity';
-import { PostInputDto } from '../api/dto/input/postInput.dto';
-import { LikeStatus } from '../../likes/api/dto/output/likesViewDto';
+import { PostInputDto } from '../api/dto/input/post-input.dto';
 import { BlogsQueryRepository } from '../../blogs/infrastructure/blogsQuery.repository';
-import { PostsRepository } from '../repository/posts.repository';
-import { PostsQueryRepository } from '../repository/postsQuery.repository';
-import { PostsViewDto } from '../api/dto/output/extendedLikesInfoView.dto';
+import { PostsRepository } from '../infrastructure/posts.repository';
+import { PostsQueryRepository } from '../infrastructure/posts-query.repository';
+import { PostsViewDto } from '../api/dto/output/extended-likes-info-view.dto';
+import { InterlayerNotice } from '../../../base/models/interlayer';
 
 @Injectable()
 export class PostsService {
@@ -16,23 +15,26 @@ export class PostsService {
     ) {
     }
 
-    async createPost(postInputData: PostInputDto): Promise<PostsViewDto> {
-        const foundBlog = await this.blogsQueryRepository.findBlog(postInputData.blogId)
-        const post = {
-            title: postInputData.title,
-            content: postInputData.content,
-            createdAt: new Date().toISOString(),
-            blogId: postInputData.blogId,
-            blogName: foundBlog.name,
-            shortDescription: postInputData.shortDescription,
-            likesCount: 0,
-            dislikesCount: 0,
-            myStatus: LikeStatus.None,
-            isDeleted: false
-        }
-        const createdPost = await this.postsRepository.createPost(post)
-        return await this.postQueryRepository.findPost(createdPost._id.toString())
+    async createPost(postInputData: PostInputDto): Promise<InterlayerNotice<PostsViewDto>> {
+        const notice = new InterlayerNotice<PostsViewDto>
 
+        const foundBlog = await this.blogsQueryRepository.findBlog(postInputData.blogId)
+        if (!foundBlog) {
+            notice.addError('blog is not found')
+            return notice
+        }
+
+        const createdPost = await this.postsRepository.createPost(
+            postInputData.title,
+            postInputData.shortDescription,
+            postInputData.content,
+            postInputData.blogId,
+            foundBlog.name
+        )
+
+        const mappedPost = await this.postQueryRepository.findPost(createdPost._id.toString())
+        notice.addData(mappedPost)
+        return notice
     }
 
     async updatePost(postId: string, updateData: PostInputDto) {

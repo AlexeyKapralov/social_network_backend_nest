@@ -1,7 +1,7 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { agent as request, agent } from 'supertest';
-import { UserInputDto } from '../../src/features/users/api/dto/input/userInputDto';
-import { UserViewDto } from '../../src/features/users/api/dto/output/userViewDto';
+import { UserInputDto } from '../../src/features/users/api/dto/input/user-input.dto';
+import { UserViewDto } from '../../src/features/users/api/dto/output/user-view.dto';
 
 export class UserManagerTest {
     constructor(protected readonly app: INestApplication) {

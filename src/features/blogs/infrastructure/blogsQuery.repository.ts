@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { Blog, BlogModelType } from '../domain/blogs.entity';
 import { BlogViewModel } from '../api/dto/output/blogView.model';
 import { InjectModel } from '@nestjs/mongoose';
-import { QueryDto } from '../../../common/dto/query.dto';
 import { Paginator } from '../../../common/dto/paginator.dto';
+import { QueryDtoWithName } from '../../../common/dto/query.dto';
 
 @Injectable()
 export class BlogsQueryRepository {
@@ -32,7 +32,7 @@ export class BlogsQueryRepository {
 
     }
 
-    async findBlogs(query: Omit<QueryDto, 'searchLoginTerm' | 'searchEmailTerm'>): Promise<Paginator<BlogViewModel>> {
+    async findBlogs(query: QueryDtoWithName): Promise<Paginator<BlogViewModel>> {
 
 
         const countBlogs = await this.blogModel.countDocuments(

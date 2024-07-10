@@ -1,15 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { BlogInputDto } from '../api/dto/input/blogInput.dto';
+import { BlogInputDto } from '../api/dto/input/blog-input.dto';
 import { BlogsRepository } from '../infrastructure/blogs.repository';
 import { Blog } from '../domain/blogs.entity';
-import { BlogsQueryRepository } from '../infrastructure/blogsQuery.repository';
-import { QueryDto } from '../../../common/dto/query.dto';
-import { PostInputDto } from '../../posts/api/dto/input/postInput.dto';
-import { PostsViewDto } from '../../posts/api/dto/output/extendedLikesInfoView.dto';
-import { LikeStatus } from '../../likes/api/dto/output/likesViewDto';
-import { BlogPostInputDto } from '../api/dto/input/blogPostInputDto';
-import { PostsRepository } from '../../posts/repository/posts.repository';
-import { PostsQueryRepository } from '../../posts/repository/postsQuery.repository';
+import { PostsViewDto } from '../../posts/api/dto/output/extended-likes-info-view.dto';
+import { LikeStatus } from '../../likes/api/dto/output/likes-view.dto';
+import { BlogPostInputDto } from '../api/dto/input/blog-post-input.dto';
+import { PostsRepository } from '../../posts/infrastructure/posts.repository';
+import { PostsQueryRepository } from '../../posts/infrastructure/posts-query.repository';
 
 @Injectable()
 export class BlogService {
@@ -38,19 +35,15 @@ export class BlogService {
         if (!foundBlog) {
             return null
         }
-        const post = {
-            title: blogPostBody.title,
-            content: blogPostBody.content,
-            createdAt: new Date().toISOString(),
-            blogId: blogId,
-            blogName: foundBlog.name,
-            shortDescription: blogPostBody.shortDescription,
-            likesCount: 0,
-            dislikesCount: 0,
-            myStatus: LikeStatus.None,
-            isDeleted: false
-        }
-        const createdPost = await this.postsRepository.createPost(post)
+
+        const createdPost = await this.postsRepository.createPost(
+            blogPostBody.title,
+            blogPostBody.content,
+            blogId,
+            foundBlog.name,
+            blogPostBody.shortDescription
+        )
+
         return await this.postsQueryRepository.findPost(createdPost._id.toString())
     }
 

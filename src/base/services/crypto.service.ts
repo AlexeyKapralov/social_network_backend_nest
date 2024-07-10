@@ -11,4 +11,8 @@ export class CryptoService {
     async comparePasswordsHash(reqPassPlainText: string, dbPassHash: string): Promise<boolean> {
         return await bcrypt.compare(reqPassPlainText, dbPassHash)
     }
+
+    async getTokenPayload(token: string) {
+        return bcrypt.va
+    }
 }

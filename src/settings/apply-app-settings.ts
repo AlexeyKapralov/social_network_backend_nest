@@ -2,6 +2,7 @@ import { BadRequestException, INestApplication, ValidationPipe } from '@nestjs/c
 import { HttpExceptionFilter } from '../common/exception-filters/httpExceptionFilter';
 import { useContainer } from 'class-validator';
 import { AppModule } from '../app.module';
+import cookieParser from 'cookie-parser';
 
 export const applyAppSettings = (app: INestApplication) => {
     app.enableCors();
@@ -11,9 +12,12 @@ export const applyAppSettings = (app: INestApplication) => {
     // когда DI не имеет необходимого класса.
     useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
+    app.use(cookieParser());
+
     app.useGlobalPipes(new ValidationPipe({
         transform: true,
-        stopAtFirstError: true,
+        //todo stop at first не работает с асинхронными?
+        stopAtFirstError: true, //не работает с асинхронными декораторами
         exceptionFactory: (errors) => {
 
             const errorsForResponse = [];
