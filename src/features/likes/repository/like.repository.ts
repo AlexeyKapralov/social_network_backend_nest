@@ -17,17 +17,17 @@ export class LikeRepository {
         return like
     }
 
-    async changeLikeStatus(userId: string, parentId: string, likeStatus: LikeStatus): Promise<boolean> {
-        const like = await this.findLikeByUserAndParent(userId, parentId)
+    async changeLikeStatus(userId: string, parentId: string, likeStatus: LikeStatus): Promise<LikeDocument> {
+        let like = await this.findLikeByUserAndParent(userId, parentId)
 
         if (!like) {
-            return false
+            throw new Error('like does not exist (LikeRepository.changeLikeStatus)')
         }
 
         like.likeStatus = likeStatus
         //todo сделать метод для сохранение в mongoose model
         await like.save()
-        return true
+        return like
     }
 
     /*

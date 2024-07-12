@@ -3,7 +3,8 @@ import {
     Controller,
     Delete,
     Get,
-    Headers, HttpCode,
+    Headers,
+    HttpCode,
     HttpStatus,
     NotFoundException,
     Param,
@@ -26,14 +27,21 @@ import {
     CreateCommentResultType,
 } from '../../comments/application/usecases/create-comment.usecase';
 import { CurrentUserId } from '../../auth/api/decorators/current-user.param.decorator';
-import { InterlayerNotice, InterLayerStatuses } from '../../../base/models/interlayer';
+import {
+    InterlayerNotice,
+    InterLayerStatuses,
+} from '../../../base/models/interlayer';
 import { CommentsQueryRepository } from '../../comments/infrastructure/commentsQuery.repository';
 import { JwtService } from '@nestjs/jwt';
 import { JwtLocalService } from '../../../base/services/jwt-local.service';
-import { GetCommentsPayload, GetCommentsResultType } from '../../comments/infrastructure/queries/get-comments.query';
+import {
+    GetCommentsPayload,
+    GetCommentsResultType,
+} from '../../comments/infrastructure/queries/get-comments.query';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { LikeInputDto } from '../../likes/api/dto/input/like-input.dto';
 import { LikeService } from '../../likes/application/like.service';
+import { BlogsRepository } from '../../blogs/infrastructure/blogs.repository';
 
 @Controller('posts')
 export class PostsController {
@@ -42,6 +50,7 @@ export class PostsController {
        private readonly jwtService: JwtService,
        private readonly likeService: LikeService,
        private readonly postQueryRepository: PostsQueryRepository,
+       private readonly blogsRepository: BlogsRepository,
        private readonly commandBus: CommandBus,
        private readonly queryBus: QueryBus,
        private readonly commentsQueryRepository: CommentsQueryRepository,
@@ -157,8 +166,11 @@ export class PostsController {
     @Get()
     async findPosts(
         @Query() query: QueryDtoBase,
+        @Headers('authorization') authorization: string,
     ) {
-        return await this.postQueryRepository.findPosts(query);
+        const userId = await this.jwtLocalService.parseJwtToken(authorization)
+
+        return await this.postQueryRepository.findPosts(query, userId);
     }
 
     @UseGuards(AuthGuard('basic'))

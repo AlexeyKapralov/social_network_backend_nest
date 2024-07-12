@@ -5,13 +5,15 @@ import { PostsRepository } from '../infrastructure/posts.repository';
 import { PostsQueryRepository } from '../infrastructure/posts-query.repository';
 import { PostsViewDto } from '../api/dto/output/extended-likes-info-view.dto';
 import { InterlayerNotice } from '../../../base/models/interlayer';
+import { LikeRepository } from '../../likes/repository/like.repository';
 
 @Injectable()
 export class PostsService {
     constructor(
         private readonly postsRepository: PostsRepository,
         private readonly blogsQueryRepository: BlogsQueryRepository,
-        private readonly postQueryRepository: PostsQueryRepository
+        private readonly postQueryRepository: PostsQueryRepository,
+        private readonly likesRepository: LikeRepository
     ) {
     }
 

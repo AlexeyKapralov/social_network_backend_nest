@@ -1,7 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Model } from 'mongoose';
 
-//todo все схемы сделать со статическим методом create
 @Schema()
 export class Comment {
     @Prop()
@@ -23,7 +22,6 @@ export class Comment {
         content: string,
         userId: string,
         postId: string
-
     ) {
         const comment = new this()
 

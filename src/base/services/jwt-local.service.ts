@@ -15,10 +15,9 @@ export class JwtLocalService {
 
         const apiSettings = this.configService.get( 'apiSettings', {infer: true} )
 
-        const token = tokenFromHeaders.split(' ')[1]
-
-
         try{
+            const token = tokenFromHeaders.split(' ')[1]
+
             const jwtFull =  await this.jwtService.verifyAsync(
                 token,
                 {

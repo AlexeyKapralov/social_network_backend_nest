@@ -1,5 +1,8 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { InterlayerNotice, InterLayerStatuses } from '../../../../base/models/interlayer';
+import {
+    InterlayerNotice,
+    InterLayerStatuses,
+} from '../../../../base/models/interlayer';
 import { CommentsRepository } from '../../infrastructure/comments.repository';
 import { CommentDocument } from '../../domain/comment.entity';
 import { LikeDocument } from '../../../likes/domain/likes.entity';
@@ -35,32 +38,26 @@ export class LikeCommentUseCase implements ICommandHandler<
             return notice
         }
 
-        //обновление лайка
-        let like: LikeDocument = await this.likeRepository.findLikeByUserAndParent(
-            command.userId,
-            command.commentId
-        )
+        let like: LikeDocument = await this.likeRepository.findLikeByUserAndParent(command.userId, command.commentId)
         if (!like) {
-            like = await this.likeRepository.createLike(
-                command.userId,
-                command.commentId,
-                command.likeStatus
-            )
-        } else {
-            const isChangeLikeStatus = await this.likeRepository.changeLikeStatus(
-                command.userId,
-                command.commentId,
-                command.likeStatus
-            )
-            if (!isChangeLikeStatus) {
-                throw new Error('There was no change in status in like. Some problem with likeRepository.changeLikeStatus')
-            }
+            like  = await this.likeRepository.createLike(command.userId, command.commentId, LikeStatus.None)
+        }
+        if (!like) {
+            throw new Error(`like didn't create`)
+        }
+        const newLike: LikeDocument = await this.likeRepository.changeLikeStatus(
+            command.userId,
+            command.commentId,
+            command.likeStatus
+        )
+        if (!newLike) {
+            throw new Error('Some problem with likeRepository.changeLikeStatus or likeRepository.findLikeByUserAndParent')
         }
 
         //обновление комментария
         const isChangeLikeStatusComment = await this.commentsRepository.changeLikesAndDislikesCount(command.commentId, like.likeStatus, command.likeStatus)
         if (!isChangeLikeStatusComment) {
-            throw new Error('There was no change in status in comment. Some problem with commentsRepository.changeLikesAndDislikesCoun')
+            throw new Error('There was no change in status in comment. Some problem with commentsRepository.changeLikesAndDislikesCount ')
         }
 
         return notice

@@ -1,5 +1,5 @@
 import { Transform, TransformFnParams, Type } from 'class-transformer';
-import { IsDefined, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsDefined, IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 enum SortDirection {
     ASC = 'asc',
@@ -21,9 +21,11 @@ export class QueryDtoBase {
     sortDirection: number = -1
     @Type( () => Number)
     @IsNumber()
+    @Min(1)
     pageNumber: number = 1
     @Type( () => Number)
     @IsNumber()
+    @Min(1)
     pageSize: number = 10
 }
 

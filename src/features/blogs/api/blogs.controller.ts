@@ -1,4 +1,18 @@
-import { Body, Controller, Delete, Get, HttpStatus, Param, Post, Put, Query, Res, UseGuards } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Headers,
+    HttpStatus,
+    NotFoundException,
+    Param,
+    Post,
+    Put,
+    Query,
+    Res,
+    UseGuards,
+} from '@nestjs/common';
 import { BlogInputDto } from './dto/input/blog-input.dto';
 import { BlogService } from '../application/blog.service';
 import { QueryDtoBase, QueryDtoWithName } from '../../../common/dto/query.dto';
@@ -7,10 +21,9 @@ import { BlogDocument } from '../domain/blogs.entity';
 import { Response } from 'express';
 import { PostsQueryRepository } from '../../posts/infrastructure/posts-query.repository';
 import { BlogPostInputDto } from './dto/input/blog-post-input.dto';
-import { PostDocument } from '../../posts/domain/posts.entity';
 import { PostsViewDto } from '../../posts/api/dto/output/extended-likes-info-view.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { AuthGuard } from '@nestjs/passport';
+import { JwtLocalService } from '../../../base/services/jwt-local.service';
 
 @Controller('blogs')
 export class BlogsController {
@@ -18,6 +31,7 @@ export class BlogsController {
         private readonly blogService: BlogService,
         private readonly blogQueryRepository: BlogsQueryRepository,
         private readonly postQueryRepository: PostsQueryRepository,
+        private readonly jwtLocalService: JwtLocalService
     ) {
     }
 
@@ -83,17 +97,22 @@ export class BlogsController {
     async getPostsForBlog(
         @Param('blogId') blogId: string,
         @Query() query: QueryDtoBase,
-        @Res({ passthrough: true }) res: Response
-    ) {
+        @Res({ passthrough: true }) res: Response,
+        @Headers('authorization') authorization: string
+) {
 
-        const foundBlog = await this.blogQueryRepository.findBlog(blogId)
+    const userId = await this.jwtLocalService.parseJwtToken(authorization)
 
-        if (!foundBlog) {
-            res.status(HttpStatus.NOT_FOUND)
-            return
+        let foundBlog
+        try{
+            foundBlog = await this.blogQueryRepository.findBlog(blogId)
+        } catch {}
+
+        if (!foundBlog){
+            throw new NotFoundException()
         }
 
-        const posts = await this.postQueryRepository.findPostsForBlog(query, foundBlog.id)
+        const posts = await this.postQueryRepository.findPostsForBlog(query, blogId, userId)
 
         posts ? res.status(HttpStatus.OK).send(posts) : res.status(HttpStatus.NOT_FOUND)
     }

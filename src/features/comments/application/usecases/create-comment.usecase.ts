@@ -1,7 +1,11 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { InterlayerNotice, InterLayerStatuses } from '../../../../base/models/interlayer';
+import {
+    InterlayerNotice,
+    InterLayerStatuses,
+} from '../../../../base/models/interlayer';
 import { CommentsRepository } from '../../infrastructure/comments.repository';
 import { PostsQueryRepository } from '../../../posts/infrastructure/posts-query.repository';
+import { LikeRepository } from '../../../likes/repository/like.repository';
 
 export class CreateCommentCommand {
     constructor(
@@ -19,6 +23,7 @@ export class CreateCommentUseCase implements ICommandHandler<
     constructor(
         private readonly commentsRepository: CommentsRepository,
         private readonly postQueryRepository: PostsQueryRepository,
+        private readonly likeRepository: LikeRepository,
     ) {}
 
     async execute(command: CreateCommentCommand): Promise<InterlayerNotice<CreateCommentResultType>> {
@@ -33,9 +38,9 @@ export class CreateCommentUseCase implements ICommandHandler<
         const comment  = await this.commentsRepository.createComment(
             command.postId, command.content, command.userId
         )
-
         if (!comment) {
             notice.addError(`comment didn't create`)
+            return notice
         }
 
         notice.addData({ commentId: comment._id.toString() })

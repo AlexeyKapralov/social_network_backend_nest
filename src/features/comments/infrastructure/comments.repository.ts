@@ -69,32 +69,27 @@ export class CommentsRepository {
             case (newCommentStatus === LikeStatus.Like && oldCommentStatus === LikeStatus.Dislike) :
                 comment.addCountLikes(1);
                 comment.addCountDislikes(-1);
-                await comment.save();
-                return true;
+                break
             case (newCommentStatus === LikeStatus.Like && oldCommentStatus === LikeStatus.None):
                 comment.addCountLikes(1);
-                await comment.save();
-                return true;
+                break
             case (newCommentStatus === LikeStatus.Dislike && oldCommentStatus === LikeStatus.Like):
                 comment.addCountLikes(-1);
                 comment.addCountDislikes(1);
-                await comment.save();
-                return true;
+                break
             case (newCommentStatus === LikeStatus.Dislike && oldCommentStatus === LikeStatus.None):
                 comment.addCountDislikes(1);
-                await comment.save();
-                return true;
+                break
             case (newCommentStatus === LikeStatus.None && oldCommentStatus === LikeStatus.Like):
                 comment.addCountLikes(-1);
-                await comment.save();
-                return true;
+                break
             case (newCommentStatus === LikeStatus.None && oldCommentStatus === LikeStatus.Dislike):
                 comment.addCountDislikes(-1);
-                await comment.save();
-                return true;
-            default:
-                return true;
+                break
         }
+
+        await comment.save();
+        return true;
 
     }
 }

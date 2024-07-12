@@ -103,12 +103,25 @@ export class GetCommentsQuery implements IQueryHandler<
                     },
                 },
                 { $sort: { [query.sortBy]: query.sortDirection as 1 | -1 } },
-                { $skip: (query.pageNumber - 1) * query.pageSize }
+                { $skip: (query.pageNumber - 1) * query.pageSize },
+                {
+                    $project: {
+                        _id: 0,
+                        id: { $toString: '$_id' },
+                        content: 1,
+                        'commentatorInfo.userId': '$userId',
+                        'commentatorInfo.userLogin': { $arrayElemAt: ['$users.login', 0] },
+                        createdAt: 1,
+                        'likesInfo.likesCount': '$likesCount',
+                        'likesInfo.dislikesCount': '$dislikesCount',
+                        'likesInfo.myStatus':  { $ifNull: [ { $arrayElemAt: ['$likes.likeStatus', 0] }, LikeStatus.None ] },
+                    }
+                },
             ],
         ).exec();
 
-        let commentsMapped: CommentsViewDto[] = [];
-        //promise all чтобы дождаться выполнения всех промисов
+        /*let commentsMapped: CommentsViewDto[] = [];
+        promise all чтобы дождаться выполнения всех промисов
         await Promise.all(comments.map(async (
             comment:
                 CommentDocument &
@@ -116,8 +129,8 @@ export class GetCommentsQuery implements IQueryHandler<
                 { users: { login: string }[] }
         ) => {
 
-            // let userFromComment: UserDocument;
-            // userFromComment = await this.userModel.findOne({ _id: comment.userId }).exec();
+            let userFromComment: UserDocument;
+            userFromComment = await this.userModel.findOne({ _id: comment.userId }).exec();
 
             let likeStatus: LikeStatus = LikeStatus.None;
             if (comment.likes.length !== 0) {
@@ -138,14 +151,14 @@ export class GetCommentsQuery implements IQueryHandler<
                     myStatus: likeStatus
                 },
             });
-        }));
+        })); */
 
         const commentsMappedWithPagination: Paginator<CommentsViewDto> = {
             pagesCount: Math.ceil(countComments / query.pageSize),
             page: query.pageNumber,
             pageSize: query.pageSize,
             totalCount: countComments,
-            items: commentsMapped,
+            items: comments,
         };
 
         notice.addData(commentsMappedWithPagination);

@@ -1,4 +1,4 @@
-import { Post, PostDocument, PostModelType } from '../domain/posts.entity';
+import { Post, PostModelType } from '../domain/posts.entity';
 import { InjectModel } from '@nestjs/mongoose';
 import { PostsViewDto } from '../api/dto/output/extended-likes-info-view.dto';
 import { Paginator } from '../../../common/dto/paginator.dto';
@@ -14,83 +14,199 @@ export class PostsQueryRepository {
         @InjectModel(Post.name) private postModel: PostModelType,
         @InjectModel(User.name) private userModel: UserModelType,
         private readonly likeQueryRepository: LikeQueryRepository,
-    ) {
-    }
+    ) {}
 
     async findPosts(query: QueryDtoBase, userId: string = '') {
-        const countPosts = await this.postModel.find({ isDeleted: false }).countDocuments();
+        const countPosts = await this.postModel
+            .find({ isDeleted: false })
+            .countDocuments();
 
         const posts = await this.postModel.aggregate([
-                {
-                    $addFields: {
-                        _postIdString: { $toString: '$_id' },
-                    },
+            {
+                $addFields: {
+                    _id: { $toString: '$_id' },
                 },
-                {
-                    $match: {
-                        isDeleted: false,
-                    },
+            },
+            {
+                $match: {
+                    isDeleted: false,
                 },
-                {
-                    $lookup: {
-                        from: 'likes',
-                        localField: '_postIdString',
-                        foreignField: 'parentId',
-                        pipeline: [
-                            { $match: { userId: userId } },
-                            { $project: { _id: 0, likeStatus: 1 } },
-                        ],
-                        as: 'likes',
-                    },
+            },
+            {
+                $lookup: {
+                    from: 'likes',
+                    localField: '_id',
+                    foreignField: 'parentId',
+                    pipeline: [
+                        { $match: { userId: userId } },
+                        { $project: { _id: 0, likeStatus: 1 } },
+                    ],
+                    as: 'likes',
                 },
-                { $sort: { [query.sortBy]: query.sortDirection as 1 | -1 } },
-                { $skip: (query.pageNumber - 1) * query.pageSize },
-                { $limit: query.pageSize },
-            ],
-        ).exec();
-
-        let mappedPosts: PostsViewDto[] = [];
-        await Promise.all(
-            posts.map(async (post: PostDocument & { likes: { likeStatus: LikeStatus }[] }) => {
-                    let likeStatus: LikeStatus = LikeStatus.None;
-                    if (post.likes.length !== 0) {
-                        likeStatus = post.likes[0].likeStatus;
-                    }
-                    const newestLikes = await this.likeQueryRepository.getNewestLikes(post._id.toString(), 3);
-
-                    mappedPosts.push({
-                        id: post._id.toString(),
-                        title: post.title,
-                        shortDescription: post.shortDescription,
-                        content: post.content,
-                        blogId: post.blogId,
-                        blogName: post.blogName,
-                        createdAt: post.createdAt,
-                        extendedLikesInfo: {
-                            likesCount: post.likesCount,
-                            dislikesCount: post.dislikesCount,
-                            myStatus: likeStatus,
-                            newestLikes: newestLikes,
+            },
+            {
+                $addFields: {
+                    myStatus: { $arrayElemAt: ['$likes.likeStatus', 0] },
+                },
+            },
+            {
+                $project: {
+                    likes: 0,
+                },
+            },
+            {
+                $lookup: {
+                    from: 'likes',
+                    localField: '_id',
+                    foreignField: 'parentId',
+                    pipeline: [
+                        {
+                            $addFields: {
+                                userId: { $toObjectId: '$userId' },
+                            },
                         },
-                    });
+                        {
+                            $match: { likeStatus: LikeStatus.Like },
+                        },
+                        {
+                            $project: {
+                                _id: 0,
+                                addedAt: '$createdAt',
+                                userId: 1,
+                            },
+                        },
+                        {
+                            $lookup: {
+                                from: 'users',
+                                localField: 'userId',
+                                foreignField: '_id',
+                                pipeline: [
+                                    {
+                                        $project: {
+                                            _id: 0,
+                                            login: 1,
+                                        },
+                                    },
+                                ],
+                                as: 'users',
+                            },
+                        },
+                        {
+                            $project: {
+                                login: { $arrayElemAt: ['$users.login', 0] },
+                                userId: 1,
+                                addedAt: 1,
+                            },
+                        },
+                        { $sort: { addedAt: -1 } },
+                        { $limit: 3 },
+                    ],
+                    as: 'newestLikes',
                 },
-            ),
-        );
+            },
+            { $sort: { [query.sortBy]: query.sortDirection as 1 | -1 } },
+            { $skip: (query.pageNumber - 1) * query.pageSize },
+            { $limit: query.pageSize },
+            {
+                $project: {
+                    _id: 0,
+                    id: { $toString: '$_id' },
+                    title: 1,
+                    shortDescription: 1,
+                    content: 1,
+                    blogId: 1,
+                    blogName: 1,
+                    createdAt: 1,
+                    'extendedLikesInfo.likesCount': '$likesCount',
+                    'extendedLikesInfo.dislikesCount': '$dislikesCount',
+                    'extendedLikesInfo.myStatus': {
+                        $ifNull: ['$myStatus', LikeStatus.None],
+                    },
+                    'extendedLikesInfo.newestLikes': '$newestLikes',
+                },
+            },
+        ]);
+
+        // const posts = await this.postModel.aggregate([
+        //         {
+        //             $addFields: {
+        //                 _postIdString: { $toString: '$_id' },
+        //             },
+        //         },
+        //         {
+        //             $match: {
+        //                 isDeleted: false,
+        //             },
+        //         },
+        //         {
+        //             $lookup: {
+        //                 from: 'likes',
+        //                 localField: '_postIdString',
+        //                 foreignField: 'parentId',
+        //                 pipeline: [
+        //                     { $match: { userId: userId } },
+        //                     { $project: { _id: 0, likeStatus: 1 } },
+        //                 ],
+        //                 as: 'likes',
+        //             },
+        //         },
+        //         { $sort: { [query.sortBy]: query.sortDirection as 1 | -1 } },
+        //         { $skip: (query.pageNumber - 1) * query.pageSize },
+        //         { $limit: query.pageSize },
+        //     ],
+        // ).exec();
+
+        // let mappedPosts: PostsViewDto[] = [];
+        // await Promise.all(
+        //     posts.map(
+        //         async (
+        //             post: PostDocument & {
+        //                 likes: { likeStatus: LikeStatus }[];
+        //             },
+        //         ) => {
+        //             let likeStatus: LikeStatus = LikeStatus.None;
+        //             if (post.likes.length !== 0) {
+        //                 likeStatus = post.likes[0].likeStatus;
+        //             }
+        //
+        //             mappedPosts.push({
+        //                 id: post._id.toString(),
+        //                 title: post.title,
+        //                 shortDescription: post.shortDescription,
+        //                 content: post.content,
+        //                 blogId: post.blogId,
+        //                 blogName: post.blogName,
+        //                 createdAt: post.createdAt,
+        //                 extendedLikesInfo: {
+        //                     likesCount: post.likesCount,
+        //                     dislikesCount: post.dislikesCount,
+        //                     myStatus: likeStatus,
+        //                     newestLikes: [],
+        //                 },
+        //             });
+        //         },
+        //     ),
+        // );
 
         const postsWithPaginate: Paginator<PostsViewDto> = {
             pagesCount: Math.ceil(countPosts / query.pageSize),
             page: query.pageNumber,
             pageSize: query.pageSize,
             totalCount: countPosts,
-            items: mappedPosts,
+            items: posts,
         };
 
         return postsWithPaginate;
     }
 
-    async findPostsForBlog(query: QueryDtoBase, blogId: string, userId: string = '') {
-
-        const countPosts = await this.postModel.find({ blogId: blogId, isDeleted: false }).countDocuments();
+    async findPostsForBlog(
+        query: QueryDtoBase,
+        blogId: string,
+        userId: string = '',
+    ) {
+        const countPosts = await this.postModel
+            .find({ blogId: blogId, isDeleted: false })
+            .countDocuments();
         // const posts: PostDocument[] = await this.postModel.aggregate([
         //     {
         //         $match: {
@@ -103,10 +219,12 @@ export class PostsQueryRepository {
         //     { $limit: query.pageSize },
         // ]).exec();
 
-        const posts = await this.postModel.aggregate([
+        let posts = [];
+        posts = await this.postModel
+            .aggregate([
                 {
                     $addFields: {
-                        _postIdString: { $toString: '$_id' },
+                        _id: { $toString: '$_id' },
                     },
                 },
                 {
@@ -118,7 +236,7 @@ export class PostsQueryRepository {
                 {
                     $lookup: {
                         from: 'likes',
-                        localField: '_postIdString',
+                        localField: '_id',
                         foreignField: 'parentId',
                         pipeline: [
                             { $match: { userId: userId } },
@@ -127,62 +245,123 @@ export class PostsQueryRepository {
                         as: 'likes',
                     },
                 },
+                {
+                    $addFields: {
+                        myStatus: {
+                            $arrayElemAt: ['$likes.likeStatus', 0],
+                        },
+                    },
+                },
+                {
+                    $project: {
+                        likes: 0,
+                    },
+                },
+                {
+                    $lookup: {
+                        from: 'likes',
+                        localField: '_id',
+                        foreignField: 'parentId',
+                        pipeline: [
+                            {
+                                $addFields: {
+                                    userId: { $toObjectId: '$userId' },
+                                },
+                            },
+                            {
+                                $match: { likeStatus: LikeStatus.Like },
+                            },
+                            {
+                                $project: {
+                                    _id: 0,
+                                    addedAt: '$createdAt',
+                                    userId: 1,
+                                },
+                            },
+                            {
+                                $lookup: {
+                                    from: 'users',
+                                    localField: 'userId',
+                                    foreignField: '_id',
+                                    pipeline: [
+                                        {
+                                            $project: {
+                                                _id: 0,
+                                                login: 1,
+                                            },
+                                        },
+                                    ],
+                                    as: 'users',
+                                },
+                            },
+                            {
+                                $project: {
+                                    login: {
+                                        $arrayElemAt: ['$users.login', 0],
+                                    },
+                                    userId: 1,
+                                    addedAt: 1,
+                                },
+                            },
+                            { $sort: { addedAt: -1 } },
+                            { $limit: 3 },
+                        ],
+                        as: 'newestLikes',
+                    },
+                },
                 { $sort: { [query.sortBy]: query.sortDirection as 1 | -1 } },
                 { $skip: (query.pageNumber - 1) * query.pageSize },
                 { $limit: query.pageSize },
-            ],
-        ).exec();
-
-        let mappedPosts: PostsViewDto[] = [];
-        posts.map((post: PostDocument & { likes: { likeStatus: LikeStatus }[] }) => {
-                let likeStatus: LikeStatus = LikeStatus.None;
-                if (post.likes.length !== 0) {
-                    likeStatus = post.likes[0].likeStatus;
-                }
-                mappedPosts.push({
-                    id: post._id.toString(),
-                    title: post.title,
-                    shortDescription: post.shortDescription,
-                    content: post.content,
-                    blogId: post.blogId,
-                    blogName: post.blogName,
-                    createdAt: post.createdAt,
-                    extendedLikesInfo: {
-                        likesCount: post.likesCount,
-                        dislikesCount: post.dislikesCount,
-                        myStatus: post.likes[0].likeStatus,
-                        newestLikes: [],
+                {
+                    $project: {
+                        _id: 0,
+                        id: { $toString: '$_id' },
+                        title: 1,
+                        shortDescription: 1,
+                        content: 1,
+                        blogId: 1,
+                        blogName: 1,
+                        createdAt: 1,
+                        'extendedLikesInfo.likesCount': '$likesCount',
+                        'extendedLikesInfo.dislikesCount': '$dislikesCount',
+                        'extendedLikesInfo.myStatus': {
+                            $ifNull: ['$myStatus', LikeStatus.None],
+                        },
+                        'extendedLikesInfo.newestLikes': '$newestLikes',
                     },
-                });
-            },
-        );
+                },
+            ])
+            .exec();
 
         const postsWithPaginate: Paginator<PostsViewDto> = {
             pagesCount: Math.ceil(countPosts / query.pageSize),
             page: query.pageNumber,
             pageSize: query.pageSize,
             totalCount: countPosts,
-            items: mappedPosts,
+            items: posts,
         };
 
         return postsWithPaginate;
     }
 
     async findPost(postId: string, userId: string = ''): Promise<PostsViewDto> {
-
-        const posts = await this.postModel.aggregate([
+        const posts = await this.postModel
+            .aggregate([
                 {
                     $addFields: {
-                        _postIdString: { $toString: '$_id' },
+                        _id: { $toString: '$_id' },
                     },
                 },
                 {
-                    $match: { _postIdString: postId },
+                    $match: {
+                        _id: postId,
+                        isDeleted: false,
+                    },
                 },
                 {
                     $lookup: {
                         from: 'likes',
-                        localField: '_postIdString',
+                        localField: '_id',
                         foreignField: 'parentId',
                         pipeline: [
                             { $match: { userId: userId } },
@@ -191,41 +370,93 @@ export class PostsQueryRepository {
                         as: 'likes',
                     },
                 },
-            ],
-        ).exec();
+                {
+                    $addFields: {
+                        myStatus: { $arrayElemAt: ['$likes.likeStatus', 0] },
+                    },
+                },
+                {
+                    $project: {
+                        likes: 0,
+                    },
+                },
+                {
+                    $lookup: {
+                        from: 'likes',
+                        localField: '_id',
+                        foreignField: 'parentId',
+                        pipeline: [
+                            {
+                                $addFields: {
+                                    userId: { $toObjectId: '$userId' },
+                                },
+                            },
+                            {
+                                $match: { likeStatus: LikeStatus.Like },
+                            },
+                            {
+                                $project: {
+                                    _id: 0,
+                                    addedAt: '$createdAt',
+                                    userId: 1,
+                                },
+                            },
+                            {
+                                $lookup: {
+                                    from: 'users',
+                                    localField: 'userId',
+                                    foreignField: '_id',
+                                    pipeline: [
+                                        {
+                                            $project: {
+                                                _id: 0,
+                                                login: 1,
+                                            },
+                                        },
+                                    ],
+                                    as: 'users',
+                                },
+                            },
+                            {
+                                $project: {
+                                    login: {
+                                        $arrayElemAt: ['$users.login', 0],
+                                    },
+                                    userId: 1,
+                                    addedAt: 1,
+                                },
+                            },
+                            { $sort: { addedAt: -1 } },
+                            { $limit: 3 },
+                        ],
+                        as: 'newestLikes',
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        id: { $toString: '$_id' },
+                        title: 1,
+                        shortDescription: 1,
+                        content: 1,
+                        blogId: 1,
+                        blogName: 1,
+                        createdAt: 1,
+                        'extendedLikesInfo.likesCount': '$likesCount',
+                        'extendedLikesInfo.dislikesCount': '$dislikesCount',
+                        'extendedLikesInfo.myStatus': {
+                            $ifNull: ['$myStatus', LikeStatus.None],
+                        },
+                        'extendedLikesInfo.newestLikes': '$newestLikes',
+                    },
+                },
+            ])
+            .exec();
+
         if (posts.length === 0) {
             return null;
         }
 
-        //todo нужно добавить поиск настоящих лайков со временем
-
-        // const newestLikes = this.likeModel.find()....
-
-        const post: PostDocument & { likes: { likeStatus: LikeStatus }[] } = posts[0];
-
-        let likeStatus: LikeStatus = LikeStatus.None;
-        if (post.likes.length !== 0) {
-            likeStatus = post.likes[0].likeStatus;
-        }
-
-        return post ?
-            {
-                id: post._id.toString(),
-                title: post.title,
-                shortDescription: post.shortDescription,
-                content: post.content,
-                blogId: post.blogId,
-                blogName: post.blogName,
-                createdAt: post.createdAt,
-                extendedLikesInfo: {
-                    likesCount: post.likesCount,
-                    dislikesCount: post.dislikesCount,
-                    myStatus: likeStatus,
-                    newestLikes: [],
-                },
-            } : null;
-
-
+        return posts[0];
     }
-
 }

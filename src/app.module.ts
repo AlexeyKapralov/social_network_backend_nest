@@ -55,6 +55,7 @@ import { LikeService } from './features/likes/application/like.service';
 import { LikeRepository } from './features/likes/repository/like.repository';
 import { LikeQueryRepository } from './features/likes/repository/like-query.repository';
 import { LikeCommentUseCase } from './features/comments/application/usecases/like-comment.usecase';
+import { IsExistBlogConstraint } from './common/decorators/validate/isExistBlog.decorator';
 
 const AuthProviders: Provider[] = [
     AuthService
@@ -106,6 +107,7 @@ const decorators: Provider[] = [
     IsExistConfirmationCodeConstraint,
     IsExistEmailAndNotConfirmedCodeConstraint,
     IsExistEmailConstraint,
+    IsExistBlogConstraint
 ];
 
 const services: Provider[] = [
@@ -130,7 +132,7 @@ const strategies: Provider[] = [
             ignoreEnvFile:
                 false, //для development
             // process.env.ENV !== Environments.DEVELOPMENT && process.env.ENV !== Environments.TEST, //для production и staging
-            envFilePath: ['.env.local', '.env'],
+            envFilePath: ['.env.local', /*'.env'*/],
         }),
         PassportModule,
         JwtModule.registerAsync({

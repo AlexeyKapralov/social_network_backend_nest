@@ -31,6 +31,7 @@ export class BlogService {
 
     async createPostForBlog(blogId: string, blogPostBody: BlogPostInputDto): Promise<PostsViewDto> | null {
 
+
         const foundBlog = await this.blogRepository.findBlog(blogId)
         if (!foundBlog) {
             return null
@@ -38,10 +39,10 @@ export class BlogService {
 
         const createdPost = await this.postsRepository.createPost(
             blogPostBody.title,
+            blogPostBody.shortDescription,
             blogPostBody.content,
             blogId,
             foundBlog.name,
-            blogPostBody.shortDescription
         )
 
         return await this.postsQueryRepository.findPost(createdPost._id.toString())
