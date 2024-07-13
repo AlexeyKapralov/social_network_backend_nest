@@ -1,9 +1,8 @@
-import { BadGatewayException, BadRequestException, Injectable } from '@nestjs/common';
+import { BadGatewayException, Injectable } from '@nestjs/common';
 import { UserInputDto } from '../api/dto/input/user-input.dto';
 import { User, UserDocument, UserModelType } from '../domain/user.entity';
 import { InjectModel } from '@nestjs/mongoose';
-import { RegistrationConfirmationCodeDto } from '../../auth/api/dto/input/registrationConfirmationCode.dto';
-import { NewPasswordRecoveryInputDto } from '../../auth/api/dto/input/newPasswordRecoveryInput.dto';
+import { RegistrationConfirmationCodeDto } from '../../auth/auth/api/dto/input/registrationConfirmationCode.dto';
 
 
 @Injectable()

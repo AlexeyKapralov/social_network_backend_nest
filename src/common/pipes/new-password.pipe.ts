@@ -1,7 +1,7 @@
 import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
-import { NewPasswordRecoveryInputDto } from '../../features/auth/api/dto/input/newPasswordRecoveryInput.dto';
 import { UsersRepository } from '../../features/users/infrastructure/users.repository';
 import { CryptoService } from '../../base/services/crypto.service';
+import { NewPasswordRecoveryInputDto } from '../../features/auth/auth/api/dto/input/newPasswordRecoveryInput.dto';
 
 @Injectable()
 export class NewPasswordPipe implements PipeTransform {

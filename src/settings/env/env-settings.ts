@@ -7,7 +7,7 @@ export enum Environments {
     STAGING = 'STAGING',
     // 'production' данная переменная не допустима, так как isProduction будет работать не корректно
     PRODUCTION = 'PRODUCTION',
-    TEST = 'TEST',
+    TEST = 'TESTING',
 }
 export class EnvironmentSettings {
     constructor(private environmentVariables: EnvironmentVariable) {}

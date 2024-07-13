@@ -2,6 +2,9 @@ import { ValidateNested, validateSync } from 'class-validator';
 import { ApiSettings } from './api-settings';
 import { DatabaseSettings } from './database-settings';
 import { EnvironmentSettings, EnvironmentVariable } from './env-settings';
+import {config} from 'dotenv'
+
+config({path: '.env.local'})
 
 export type ConfigurationType = Configuration
 
@@ -37,6 +40,6 @@ export function validate(environmentVariables: Record<string, string>) {
 
 export default () => {
     const environmentVariables = process.env as EnvironmentVariable;
-    console.log('process.env.ENV =', environmentVariables.ENV);
+    console.log('(Configuration): process.env.ENV =', environmentVariables.ENV);
     return Configuration.createConfig(environmentVariables);
 };

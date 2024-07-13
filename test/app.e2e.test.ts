@@ -3,18 +3,20 @@ import { HttpStatus, INestApplication } from '@nestjs/common';
 import { agent as request } from 'supertest';
 import { AppModule } from '../src/app.module';
 import { applyAppSettings } from '../src/settings/apply-app-settings';
-import { exhaustiveTypeException } from 'tsconfig-paths/lib/try-path';
-import * as stream from 'node:stream';
 import { aDescribe } from './utils/aDescribe';
 import { skipSettings } from './utils/skip-settings';
 import { Connection } from 'mongoose';
 import { getConnectionToken } from '@nestjs/mongoose';
-import objectContaining = jasmine.objectContaining;
 import { UserManagerTest } from './utils/userManager.test';
+import { ConfigService } from '@nestjs/config';
+import { ConfigurationType } from '../src/settings/env/configuration';
+import { ApiSettings } from '../src/settings/env/api-settings';
+import { EnvironmentSettings } from '../src/settings/env/env-settings';
 
 aDescribe(skipSettings.for('appTests'))('AppController (e2e)', () => {
     let app: INestApplication;
     let userManagerTest: UserManagerTest
+    let configService: ConfigService<ConfigurationType>;
 
     beforeAll(async () => {
 
@@ -51,6 +53,11 @@ aDescribe(skipSettings.for('appTests'))('AppController (e2e)', () => {
         const databaseConnection = app.get<Connection>(getConnectionToken());
         await databaseConnection.dropDatabase();
 
+        // const configService = app.get(ConfigService)
+        // const apiSettings = configService.get<ApiSettings>('apiSettings')
+        // console.log(apiSettings.ACCESS_TOKEN_EXPIRATION_LIVE)
+        // console.log(apiSettings.REFRESH_TOKEN_EXPIRATION_LIVE)
+
         //подключение менеджера
         userManagerTest = new UserManagerTest(app)
     });
@@ -69,9 +76,14 @@ aDescribe(skipSettings.for('appTests'))('AppController (e2e)', () => {
     });
 
     it('get empty array', async () => {
+        //todo использовать значения из env Из config
+        //todo переписать в менеджер отдельную функцию
+        const buff = Buffer.from('admin:qwerty', 'utf-8')
+        const decodedAuth = buff.toString('base64')
 
         return await request(app.getHttpServer())
             .get('/users')
+            .set({authorization: `Basic ${decodedAuth}`})
             .expect(HttpStatus.OK)
             .expect({
                 'pagesCount': 0,
@@ -83,6 +95,7 @@ aDescribe(skipSettings.for('appTests'))('AppController (e2e)', () => {
     });
 
     it('should create user', async () => {
+
         const userBody = {
             login: 'qS-9oRnN-',
             password: 'string',
@@ -107,8 +120,14 @@ aDescribe(skipSettings.for('appTests'))('AppController (e2e)', () => {
 
         const { userBody } = expect.getState();
 
+        //todo использовать значения из env Из config
+        //todo переписать в менеджер отдельную функцию
+        const buff = Buffer.from('admin:qwerty', 'utf-8')
+        const decodedAuth = buff.toString('base64')
+
         const user = await request(app.getHttpServer())
             .get('/users')
+            .set({authorization: `Basic ${decodedAuth}`})
             .expect(HttpStatus.OK);
 
         expect(user.body).toEqual({
