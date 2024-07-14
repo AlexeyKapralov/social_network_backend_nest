@@ -2,7 +2,13 @@ name: Run Tests and Deploy Vercel
 
 env:
     VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-
+    ENV: ${{ vars.ENV_GH }}
+    MONGO_CONNECTION_URI: ${{ secrets.MONGO_CONNECTION_URI }}
+    MONGO_CONNECTION_URI_FOR_TESTS: ${{ secrets.MONGO_CONNECTION_URI_FOR_TESTS }}
+    PORT: ${{ vars.PORT }}
+    SECRET: ${{ secrets.SECRET }}
+    ACCESS_TOKEN_EXPIRATION_LIVE: ${{ secrets.ACCESS_TOKEN_EXPIRATION_LIVE }}
+    REFRESH_TOKEN_EXPIRATION_LIVE: ${{ secrets.REFRESH_TOKEN_EXPIRATION_LIVE }}
 on:
   push:
     branches:
@@ -28,14 +34,6 @@ jobs:
 
       - name: Run e2e tests
         run: yarn test:e2e
-        env:
-          ENV: ${{ vars.ENV_GH }}
-          MONGO_CONNECTION_URI: ${{ secrets.MONGO_CONNECTION_URI }}
-          MONGO_CONNECTION_URI_FOR_TESTS: ${{ secrets.MONGO_CONNECTION_URI_FOR_TESTS }}
-          PORT: ${{ vars.PORT }}
-          SECRET: ${{ secrets.SECRET }}
-          ACCESS_TOKEN_EXPIRATION_LIVE: ${{ secrets.ACCESS_TOKEN_EXPIRATION_LIVE }}
-          REFRESH_TOKEN_EXPIRATION_LIVE: ${{ secrets.REFRESH_TOKEN_EXPIRATION_LIVE }}
 
       - name: Run integration tests
         run: yarn test:integration
