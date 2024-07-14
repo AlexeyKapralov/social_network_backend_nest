@@ -21,12 +21,12 @@ jobs:
         run: yarn
 
       - name: Run e2e tests
-        run: set ENV=TESTING&& jest --config test/jest-e2e.config.json --runInBand
-        env:
-          ENV: ${{ vars.ENV_GH }}
+        run: test:e2e
+#        env:
+#          ENV: ${{ vars.ENV_GH }}
 
       - name: Run integration tests
-        run: jest --config test/integration/jest-integration.config.json
+        run: test:integration
 #
 #  deploy:
 #    name: Deploy
