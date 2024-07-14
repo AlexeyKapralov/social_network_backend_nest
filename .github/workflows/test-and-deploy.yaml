@@ -2,6 +2,7 @@ name: Run Tests and Deploy Vercel
 
 env:
     VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+    VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     ENV: ${{ vars.ENV_GH }}
     MONGO_CONNECTION_URI: ${{ secrets.MONGO_CONNECTION_URI }}
     MONGO_CONNECTION_URI_FOR_TESTS: ${{ secrets.MONGO_CONNECTION_URI_FOR_TESTS }}
