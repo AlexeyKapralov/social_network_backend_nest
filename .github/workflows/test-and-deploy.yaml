@@ -21,12 +21,12 @@ jobs:
         run: yarn
 
       - name: Run e2e tests
-        run: test:e2e
+        run: yarn test:e2e
 #        env:
 #          ENV: ${{ vars.ENV_GH }}
 
       - name: Run integration tests
-        run: test:integration
+        run: yarn test:integration
 #
 #  deploy:
 #    name: Deploy
