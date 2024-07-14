@@ -24,11 +24,11 @@ jobs:
         run: yarn test:e2e
         env:
           ENV: ${{ vars.ENV_GH }}
-          MONGO_CONNECTION_URI_FOR_TESTS: ${{  }}
+          MONGO_CONNECTION_URI_FOR_TESTS: ${{ secrets.MONGO_CONNECTION_URI_FOR_TESTS }}
           PORT=: ${{ vars.PORT }}
-          SECRET: ${{ secret.SECRET }}
-          ACCESS_TOKEN_EXPIRATION_LIVE: ${{ secret.ACCESS_TOKEN_EXPIRATION_LIVE }}
-          REFRESH_TOKEN_EXPIRATION_LIVE: ${{ secret.REFRESH_TOKEN_EXPIRATION_LIVE }}
+          SECRET: ${{ secrets.SECRET }}
+          ACCESS_TOKEN_EXPIRATION_LIVE: ${{ secrets.ACCESS_TOKEN_EXPIRATION_LIVE }}
+          REFRESH_TOKEN_EXPIRATION_LIVE: ${{ secrets.REFRESH_TOKEN_EXPIRATION_LIVE }}
 
       - name: Run integration tests
         run: yarn test:integration
