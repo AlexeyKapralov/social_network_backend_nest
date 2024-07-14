@@ -23,7 +23,7 @@ jobs:
       - name: Run e2e tests
         run: yarn test:e2e
         env:
-          ENV: ${{ vars.ENV_GH }}MONGO_CONNECTION_URI=mongodb+srv://alexey:ru03817273@cluster0.n2nwife.mongodb.net/nest-test?retryWrites=true&w=majority&appName=Cluster0
+          ENV: ${{ vars.ENV_GH }}
           MONGO_CONNECTION_URI_FOR_TESTS: ${{  }}
           PORT=: ${{ vars.PORT }}
           SECRET: ${{ secret.SECRET }}
