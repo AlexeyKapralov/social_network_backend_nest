@@ -1,32 +1,38 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { agent as request } from 'supertest';
-import { AppModule } from '../src/app.module';
-import { applyAppSettings } from '../src/settings/apply-app-settings';
-import { aDescribe } from './utils/aDescribe';
-import { skipSettings } from './utils/skip-settings';
-import { Connection } from 'mongoose';
+import { AppModule } from '../../src/app.module';
+import { applyAppSettings } from '../../src/settings/apply-app-settings';
+import { aDescribe } from '../utils/aDescribe';
+import { skipSettings } from '../utils/skip-settings';
+import { Connection, Schema, Types } from 'mongoose';
 import { getConnectionToken } from '@nestjs/mongoose';
-import { UserManagerTest } from './utils/userManager.test';
+import { UserManagerTest } from '../utils/userManager.test';
 import { ConfigService } from '@nestjs/config';
-import { ConfigurationType } from '../src/settings/env/configuration';
-import { ApiSettings } from '../src/settings/env/api-settings';
-import { EnvironmentSettings } from '../src/settings/env/env-settings';
+import { ConfigurationType } from '../../src/settings/env/configuration';
+import { UsersQueryRepository } from '../../src/features/users/infrastructure/users-query.repository';
+import { UsersModule } from '../../src/features/users/users.module';
+import {
+    UserDocument,
+    UserModelType,
+} from '../../src/features/users/domain/user.entity';
+import { UsersService } from '../../src/features/users/application/users.service';
+import { UsersRepository } from '../../src/features/users/infrastructure/users.repository';
 
 aDescribe(skipSettings.for('appTests'))('AppController (e2e)', () => {
     let app: INestApplication;
-    let userManagerTest: UserManagerTest
+    let userManagerTest: UserManagerTest;
     let configService: ConfigService<ConfigurationType>;
+    let userRepository: UsersRepository;
 
     beforeAll(async () => {
-
         // можно создать глобальный state
         // expect.setState([
         //     // adminTokens: loginResult
         // ]);
 
         //получение глобальных переменных
-        expect.getState();
+        // expect.getState();
 
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [AppModule],
@@ -37,12 +43,14 @@ aDescribe(skipSettings.for('appTests'))('AppController (e2e)', () => {
             // .useFactory({
             //         factory: (usersRepo: UsersRepository) => {
             //             return new UserServiceMock(usersRepo, {
-            //                 countL 50
+            //                 count: 50
             //             } )
             //         },
             //          inject: [UsersQueryRepository, UsersRepository] //последовательность важна
             //     })
             .compile();
+
+        userRepository = moduleFixture.get<UsersRepository>(UsersRepository);
 
         app = moduleFixture.createNestApplication();
 
@@ -59,14 +67,12 @@ aDescribe(skipSettings.for('appTests'))('AppController (e2e)', () => {
         // console.log(apiSettings.REFRESH_TOKEN_EXPIRATION_LIVE)
 
         //подключение менеджера
-        userManagerTest = new UserManagerTest(app)
+        userManagerTest = new UserManagerTest(app);
     });
 
     afterAll(async () => {
-            await app.close();
-        },
-    );
-
+        await app.close();
+    });
 
     it('/ (GET)', () => {
         return request(app.getHttpServer())
@@ -78,71 +84,108 @@ aDescribe(skipSettings.for('appTests'))('AppController (e2e)', () => {
     it('get empty array', async () => {
         //todo использовать значения из env Из config
         //todo переписать в менеджер отдельную функцию
-        const buff = Buffer.from('admin:qwerty', 'utf-8')
-        const decodedAuth = buff.toString('base64')
+        const buff = Buffer.from('admin:qwerty', 'utf-8');
+        const decodedAuth = buff.toString('base64');
 
         return await request(app.getHttpServer())
             .get('/users')
-            .set({authorization: `Basic ${decodedAuth}`})
+            .set({ authorization: `Basic ${decodedAuth}` })
             .expect(HttpStatus.OK)
             .expect({
-                'pagesCount': 0,
-                'page': 1,
-                'pageSize': 10,
-                'totalCount': 0,
-                'items': [],
+                pagesCount: 0,
+                page: 1,
+                pageSize: 10,
+                totalCount: 0,
+                items: [],
             });
     });
 
     it('should create user', async () => {
-
         const userBody = {
             login: 'qS-9oRnN-',
             password: 'string',
             email: 'example@example.com',
-        }
+        };
 
         expect.setState({
             userBody: userBody,
-        })
+        });
 
-        const user = await userManagerTest.createUser(userBody)
+        const user = await userManagerTest.createUser(userBody);
 
         expect(user).toEqual({
             id: expect.any(String),
             login: userBody.login,
             email: userBody.email,
-            createdAt: expect.stringMatching(/\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/),
+            createdAt: expect.stringMatching(
+                /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/,
+            ),
         });
     });
 
     it('should get user with pagination', async () => {
-
         const { userBody } = expect.getState();
 
         //todo использовать значения из env Из config
         //todo переписать в менеджер отдельную функцию
-        const buff = Buffer.from('admin:qwerty', 'utf-8')
-        const decodedAuth = buff.toString('base64')
+        const buff = Buffer.from('admin:qwerty', 'utf-8');
+        const decodedAuth = buff.toString('base64');
 
         const user = await request(app.getHttpServer())
             .get('/users')
-            .set({authorization: `Basic ${decodedAuth}`})
+            .set({ authorization: `Basic ${decodedAuth}` })
             .expect(HttpStatus.OK);
 
+        expect.setState({ user: user.body });
+
         expect(user.body).toEqual({
-                'pagesCount': 1,
-                'page': 1,
-                'pageSize': 10,
-                'totalCount': 1,
-                'items': [{
+            pagesCount: 1,
+            page: 1,
+            pageSize: 10,
+            totalCount: 1,
+            items: [
+                {
                     id: expect.any(String),
                     login: userBody.login,
                     email: userBody.email,
-                    createdAt: expect.stringMatching(/\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/),
-                }],
-            },
-        );
+                    createdAt: expect.stringMatching(
+                        /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/,
+                    ),
+                },
+            ],
+        });
     });
 
+    it('should delete user', async () => {
+        const state = expect.getState();
+
+        const stateUser = state.user.items[0];
+        const user = await userRepository.findUserByEmail(stateUser.email);
+
+        expect(user.toObject()).toEqual({
+            __v: expect.any(Number),
+            _id: new Types.ObjectId(stateUser.id),
+            confirmationCode: expect.any(String),
+            createdAt: stateUser.createdAt,
+            email: stateUser.email,
+            isConfirmed: false,
+            isDeleted: false,
+            login: stateUser.login,
+            password:
+                expect.any(String),
+        });
+
+        //todo использовать значения из env Из config
+        //todo переписать в менеджер отдельную функцию
+        const buff = Buffer.from('admin:qwerty', 'utf-8');
+        const decodedAuth = buff.toString('base64');
+
+        await request(app.getHttpServer())
+            .delete(`/users/${user._id.toString()}`)
+            .set({ authorization: `Basic ${decodedAuth}` })
+            .expect(HttpStatus.NO_CONTENT);
+
+        const deletedUser = await userRepository.findUserByEmail(stateUser.email);
+        expect(deletedUser).toBeNull()
+    });
 });

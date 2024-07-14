@@ -68,5 +68,4 @@ const decorators: Provider[] = [
         ...decorators,
     ],
 })
-export class AppModule {
-}
+export class AppModule {}
