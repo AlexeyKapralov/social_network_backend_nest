@@ -40,6 +40,8 @@ jobs:
         run: yarn test:integration
 
   deploy:
+    name: deploy
+    needs: tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

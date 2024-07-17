@@ -5,36 +5,48 @@ import { InterlayerNotice } from '../../../../../base/models/interlayer';
 
 export class CreateDeviceCommand implements ICommand {
     constructor(
-        public loginOrEmail: string,
+        public userId: string,
         public ip: string,
         public deviceName: string,
-    ) {}
+        public exp: number,
+        public iat: number,
+    ) {
+    }
 }
 
 @CommandHandler(CreateDeviceCommand)
 export class CreateDeviceUseCase implements ICommandHandler<
     CreateDeviceCommand,
     InterlayerNotice<CreateDeviceResultType>
->{
-   constructor(
-      private deviceRepository: DeviceRepository
-   ) {}
+> {
+    constructor(
+        private deviceRepository: DeviceRepository,
+    ) {
+    }
 
     async execute(command: CreateDeviceCommand): Promise<InterlayerNotice<CreateDeviceResultType>> {
-       const device = await this.deviceRepository.createOrUpdateDevice(
-           command.loginOrEmail,
-           command.ip,
-           command.deviceName
-       )
+        const notice = new InterlayerNotice<CreateDeviceResultType>;
 
-        const notice = new InterlayerNotice<CreateDeviceResultType>
+        const device = await this.deviceRepository.createOrUpdateDevice(
+            command.userId,
+            command.ip,
+            command.deviceName,
+            command.exp,
+            command.iat,
+        );
 
-        notice.addData({deviceId: device._id.toString()})
+        notice.addData({
+            deviceId: device._id.toString(),
+            iat: device.iat,
+            exp: device.exp,
+        });
 
-        return notice
-   }
+        return notice;
+    }
 }
 
 export type CreateDeviceResultType = {
-    deviceId: string
+    deviceId: string,
+    exp: number
+    iat: number
 }

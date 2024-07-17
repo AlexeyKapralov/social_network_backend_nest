@@ -10,20 +10,20 @@ export class Device {
     ip: string;
 
     @Prop()
-    exp: string;
+    exp: number;
 
     @Prop()
     deviceName: string;
 
     @Prop()
-    iat: string;
+    iat: number;
 
     static createDevice(
         userId: string,
         ip: string,
-        exp: string,
         deviceName: string,
-        iat: string,
+        exp: number,
+        iat: number,
     ) {
         const device = new this();
 
@@ -49,9 +49,10 @@ export type DeviceStaticType = {
     createDevice: (
         userId: string,
         ip: string,
-        exp: string,
         deviceName: string,
-        iat: string) => DeviceDocument
+        exp: number,
+        iat: number,
+    ) => DeviceDocument
 }
 
 export type DeviceDocument = HydratedDocument<Device>

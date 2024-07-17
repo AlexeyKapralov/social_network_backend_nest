@@ -3,18 +3,18 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { IsUniqueLoginConstraint } from './common/decorators/validate/uniqueLogin.decorator';
 import { IsUniqueEmailConstraint } from './common/decorators/validate/uniqueEmail.decorator';
 import { IsExistConfirmationCodeConstraint } from './common/decorators/validate/isExistConfirmedCode.decorator';
-import { IsExistEmailAndNotConfirmedCodeConstraint } from './common/decorators/validate/isExistEmailAndNotConfirmedCode.decorator';
+import {
+    IsExistEmailAndNotConfirmedCodeConstraint,
+} from './common/decorators/validate/isExistEmailAndNotConfirmedCode.decorator';
 import { IsExistEmailConstraint } from './common/decorators/validate/isExistEmail.decorator';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import configuration, {
-    ConfigurationType,
-    validate,
-} from './settings/env/configuration';
+import configuration, { ConfigurationType, validate } from './settings/env/configuration';
 import { UsersModule } from './features/users/users.module';
 import { TestingModule } from './features/testing/testing.module';
 import { BlogsModule } from './features/blogs/blogs.module';
 import { AuthModule } from './features/auth/auth.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 
 const decorators: Provider[] = [
@@ -29,6 +29,11 @@ const decorators: Provider[] = [
 @Global()
 @Module({
     imports: [
+        ThrottlerModule.forRoot([{
+            ttl: 10000,
+            limit: 5,
+        }]),
+
         MongooseModule.forRootAsync({
                 useFactory: (configService: ConfigService<ConfigurationType>) => {
                     const environmentSettings = configService.get('environmentSettings', {
@@ -66,6 +71,11 @@ const decorators: Provider[] = [
     ],
     providers: [
         ...decorators,
+        //используется для того, чтобы применить глобально throttler
+        // {
+        //     provide: APP_GUARD,
+        //     useClass: ThrottlerGuard,
+        // }
     ],
 })
 export class AppModule {}

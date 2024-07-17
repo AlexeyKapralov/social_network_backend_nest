@@ -1,28 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
 import { agent as request } from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { applyAppSettings } from '../../src/settings/apply-app-settings';
 import { aDescribe } from '../utils/aDescribe';
 import { skipSettings } from '../utils/skip-settings';
-import { Connection, Schema, Types } from 'mongoose';
+import { Connection, Types } from 'mongoose';
 import { getConnectionToken } from '@nestjs/mongoose';
 import { UserManagerTest } from '../utils/userManager.test';
 import { ConfigService } from '@nestjs/config';
 import { ConfigurationType } from '../../src/settings/env/configuration';
-import { UsersQueryRepository } from '../../src/features/users/infrastructure/users-query.repository';
-import { UsersModule } from '../../src/features/users/users.module';
-import {
-    UserDocument,
-    UserModelType,
-} from '../../src/features/users/domain/user.entity';
-import { UsersService } from '../../src/features/users/application/users.service';
 import { UsersRepository } from '../../src/features/users/infrastructure/users.repository';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 aDescribe(skipSettings.for('appTests'))('AppController (e2e)', () => {
-    let app: INestApplication;
+    let app: NestExpressApplication;
     let userManagerTest: UserManagerTest;
-    let configService: ConfigService<ConfigurationType>;
     let userRepository: UsersRepository;
 
     beforeAll(async () => {
@@ -53,6 +46,8 @@ aDescribe(skipSettings.for('appTests'))('AppController (e2e)', () => {
         userRepository = moduleFixture.get<UsersRepository>(UsersRepository);
 
         app = moduleFixture.createNestApplication();
+
+        // await NestFactory.create<NestExpressApplication>(AppModule);
 
         applyAppSettings(app);
 
@@ -186,6 +181,6 @@ aDescribe(skipSettings.for('appTests'))('AppController (e2e)', () => {
             .expect(HttpStatus.NO_CONTENT);
 
         const deletedUser = await userRepository.findUserByEmail(stateUser.email);
-        expect(deletedUser).toBeNull()
+        expect(deletedUser).toBeNull();
     });
 });

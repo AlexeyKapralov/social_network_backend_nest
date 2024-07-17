@@ -8,8 +8,8 @@ export class ApiSettings {
     PORT: number = Number(this.environmentVariables.PORT)
     @IsString()
     SECRET: string = this.environmentVariables.SECRET
-    @Matches('\\d+(?: days|m)')
+    @Matches('\\d+(?: days|m|s)')
     ACCESS_TOKEN_EXPIRATION_LIVE: string = this.environmentVariables.ACCESS_TOKEN_EXPIRATION_LIVE
-    @Matches('\\d+(?: days|m)')
+    @Matches('\\d+(?: days|m|s)')
     REFRESH_TOKEN_EXPIRATION_LIVE: string = this.environmentVariables.REFRESH_TOKEN_EXPIRATION_LIVE
 }

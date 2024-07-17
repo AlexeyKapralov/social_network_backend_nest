@@ -2,13 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module';
 import { UsersRepository } from '../../src/features/users/infrastructure/users.repository';
 import { applyAppSettings } from '../../src/settings/apply-app-settings';
-import { Connection, HydratedDocument } from 'mongoose';
+import { Connection } from 'mongoose';
 import { getConnectionToken } from '@nestjs/mongoose';
 import { UserManagerTest } from '../utils/userManager.test';
-import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ConfigurationType } from '../../src/settings/env/configuration';
-import { UsersModule } from '../../src/features/users/users.module';
 import {
   CreateUserCommand,
   CreateUserResultData,
@@ -16,11 +14,11 @@ import {
 import { InterlayerNotice } from '../../src/base/models/interlayer';
 import { CommandBus } from '@nestjs/cqrs';
 import { UserViewDto } from '../../src/features/users/api/dto/output/user-view.dto';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 describe('integration test', () => {
-  let app: INestApplication;
+  let app: NestExpressApplication;
   let userManagerTest: UserManagerTest;
-  let configService: ConfigService<ConfigurationType>;
   let userRepository: UsersRepository;
 
   beforeAll(async () => {

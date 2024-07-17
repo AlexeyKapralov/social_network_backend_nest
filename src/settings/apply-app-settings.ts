@@ -1,11 +1,13 @@
-import { BadRequestException, INestApplication, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { HttpExceptionFilter } from '../common/exception-filters/httpExceptionFilter';
 import { useContainer } from 'class-validator';
 import { AppModule } from '../app.module';
 import cookieParser from 'cookie-parser';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
-export const applyAppSettings = (app: INestApplication) => {
+export const applyAppSettings = (app: NestExpressApplication) => {
     app.enableCors();
+    app.set('trust proxy', true);
 
     // Для внедрения зависимостей в validator constraint
     // {fallbackOnErrors: true} требуется, поскольку Nest генерирует исключение,

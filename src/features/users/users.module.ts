@@ -10,7 +10,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './domain/user.entity';
 import { CryptoService } from '../../base/services/crypto.service';
 import { CqrsModule } from '@nestjs/cqrs';
-import { JwtLocalService } from '../../base/services/jwt-local.service';
 
 @Module({
     imports: [
@@ -34,6 +33,6 @@ import { JwtLocalService } from '../../base/services/jwt-local.service';
         //services
         CryptoService
     ],
-    exports: [UsersService, UsersRepository],
+    exports: [UsersService, UsersRepository, UsersQueryRepository],
 })
 export class UsersModule {}

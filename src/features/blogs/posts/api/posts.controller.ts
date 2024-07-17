@@ -132,7 +132,7 @@ export class PostsController {
         return foundCommentsInterLayer.data
     }
 
-    @UseGuards(AuthGuard('basic'))
+    @UseGuards(JwtAuthGuard)
     @Post()
     async createPost(
         @Body() postInputData: PostInputDto

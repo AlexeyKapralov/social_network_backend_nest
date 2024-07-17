@@ -9,12 +9,16 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { UsersModule } from '../users/users.module';
 import { CryptoService } from '../../base/services/crypto.service';
 import { EmailService } from '../../base/services/email.service';
-import { JwtModule, JwtService } from '@nestjs/jwt';
+import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ConfigurationType } from '../../settings/env/configuration';
 import { LocalStrategy } from './auth/strategies/local.strategy';
 import { JwtStrategy } from './auth/strategies/jwt.strategy';
 import { BasicStrategy } from './auth/strategies/basic.strategy';
+import { DeviceService } from './devices/application/device.service';
+import { DeviceQueryRepository } from './devices/infrastructure/device-query.repository';
+import { RefreshTokensUseCase } from './auth/application/usecases/refresh-tokens.usecase';
+import { DevicesController } from './devices/api/devices.controller';
 
 @Module({
     imports: [
@@ -25,11 +29,11 @@ import { BasicStrategy } from './auth/strategies/basic.strategy';
                 const apiSettings = configService.get('apiSettings', { infer: true });
                 return {
                     secret: apiSettings.SECRET,
-                    accessTokenLive: '10m', //todo можно ли в AuthModule обращаться к этой переменной? чтобы не доставать ApiSettings в authService
-                    refreshTokenLive: '10m', //todo можно ли в AuthModule обращаться к этой переменной? чтобы не доставать ApiSettings в authService
-                    signOptions: {
-                        expiresIn: '1m'
-                    }
+                    // accessTokenLive: '10m', //todo можно ли в AuthModule обращаться к этой переменной? чтобы не доставать ApiSettings в authService
+                    // refreshTokenLive: '10m', //todo можно ли в AuthModule обращаться к этой переменной? чтобы не доставать ApiSettings в authService
+                    // signOptions: {
+                    //     expiresIn: '1m'
+                    // }
                 };
             },
             global: true,
@@ -42,14 +46,17 @@ import { BasicStrategy } from './auth/strategies/basic.strategy';
             }
         ])
     ],
-    controllers: [AuthController],
+    controllers: [AuthController, DevicesController],
     providers: [
         DeviceRepository,
+        DeviceQueryRepository,
         CreateDeviceUseCase,
+        RefreshTokensUseCase,
 
         CryptoService,
         AuthService,
         EmailService,
+        DeviceService,
 
         LocalStrategy,
         JwtStrategy,
