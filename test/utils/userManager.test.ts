@@ -6,7 +6,7 @@ import { UsersQueryRepository } from '../../src/features/users/infrastructure/us
 
 export class UserManagerTest {
     constructor(
-        protected readonly app: INestApplication
+        protected readonly app: INestApplication,
     ) {}
 
     async createUser(userBody: UserInputDto): Promise<UserViewDto> {

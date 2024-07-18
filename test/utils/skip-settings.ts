@@ -1,5 +1,5 @@
 export const skipSettings = {
-    run_all_tests: false,
+    run_all_tests: true,
 
     appTests: true,
     usersTests: true,

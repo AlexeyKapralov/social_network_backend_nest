@@ -12,8 +12,7 @@ export class LikeRepository {
 
         const like: LikeDocument = this.likeModel.createLike(userId, parentId, likeStatus)
 
-        //todo это неправильно, надо сделать отдельную конманду на сохранение
-        await like.save()
+        await this.likeModel.saveLike(like)
         return like
     }
 
@@ -25,8 +24,7 @@ export class LikeRepository {
         }
 
         like.likeStatus = likeStatus
-        //todo сделать метод для сохранение в mongoose model
-        await like.save()
+        await this.likeModel.saveLike(like)
         return like
     }
 

@@ -39,7 +39,7 @@ export class AuthService {
     //todo возвращать должен какой-то общий interlayer
     async authUser(authBody: LoginInputDto): Promise<string | null> {
 
-        //todo почему-то так не работает (ниже закоментированное)
+        //todo почему-то так не работает (ниже закомментированное)
 
         // const user = await Promise.any([
         //     this.userRepository.findUserByLogin(authBody.loginOrEmail),

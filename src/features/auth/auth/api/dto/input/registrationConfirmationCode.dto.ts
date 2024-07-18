@@ -3,8 +3,8 @@ import { Trim } from '../../../../../../common/decorators/transform/trim.decorat
 import { IsExistConfirmationCode } from '../../../../../../common/decorators/validate/isExistConfirmedCode.decorator';
 
 export class RegistrationConfirmationCodeDto {
-    //todo асинхронные должны быть сверху, так как работать будет снизу вверх
-    //todo лучше проверку корректности бизнес данных (существует ли что-то в бд и т.д.) лучше здесь не делать
+    //асинхронные должны быть сверху, так как работать будет снизу вверх
+    //лучше проверку корректности бизнес данных (существует ли что-то в бд и т.д.) лучше здесь не делать
     @Trim()
     @IsExistConfirmationCode()
     @IsString()

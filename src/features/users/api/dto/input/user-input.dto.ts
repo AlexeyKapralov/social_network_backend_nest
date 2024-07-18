@@ -4,7 +4,7 @@ import { IsUniqueEmail } from '../../../../../common/decorators/validate/uniqueE
 import { Trim } from '../../../../../common/decorators/transform/trim.decorator';
 
 export class UserInputDto {
-    //todo асинхронные должны быть сверху, так как работать будет снизу вверх, а лучше их ввобще убрать
+    //асинхронные должны быть сверху, так как работать будет снизу вверх, а лучше их вообще убрать
     @IsUniqueLogin()
     @Trim()
     @Length(3, 10)
@@ -17,7 +17,7 @@ export class UserInputDto {
     @IsString()
     password: string
 
-    //todo асинхронные должны быть сверху, так как работать будет снизу вверх, а лучше их ввобще убрать
+    //асинхронные должны быть сверху, так как работать будет снизу вверх, а лучше их ввобще убрать
     @IsUniqueEmail()
     @Trim()
     @IsEmail()

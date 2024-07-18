@@ -5,7 +5,7 @@ import {
 } from '../../../../../../common/decorators/validate/isExistEmailAndNotConfirmedCode.decorator';
 
 export class RegistrationEmailResendingDto {
-    //todo асинхронные должны быть сверху, так как работать будет снизу вверх
+    //асинхронные должны быть сверху, так как работать будет снизу вверх
     @Trim()
     @IsExistEmailAndNotConfirmedCode()
     @IsString()

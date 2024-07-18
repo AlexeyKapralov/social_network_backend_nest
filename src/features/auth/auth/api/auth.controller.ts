@@ -31,11 +31,8 @@ import { ThrottlerBehindProxyGuard } from '../guards/throttle-behind-proxy.guard
 import { Cookies } from '../../../../common/decorators/get-cookie.decorator';
 import { DeviceService } from '../../devices/application/device.service';
 import { JwtService } from '@nestjs/jwt';
-import { DeviceQueryRepository } from '../../devices/infrastructure/device-query.repository';
-import { ConfigService } from '@nestjs/config';
 import { RefreshTokenPayloadDto } from '../../../../common/dto/refresh-token-payload.dto';
 import { RefreshTokensCommand, RefreshTokensUseCaseResultType } from '../application/usecases/refresh-tokens.usecase';
-import { DeviceRepository } from '../../devices/infrastructure/device.repository';
 import { UsersQueryRepository } from '../../../users/infrastructure/users-query.repository';
 
 @UseGuards(ThrottlerBehindProxyGuard)
@@ -124,7 +121,7 @@ export class AuthController {
     @Post('refresh-token')
     @HttpCode(HttpStatus.OK)
     async updatePairOfTokens(
-        //todo переписать внутрь @Cookies засунуть pipe с доставанием токен payload и проверкой expired девайса
+        //todo переписать внутрь @Cookies засунуть pipe с доставанием токен payload и проверкой expired девайса (132-144 строчки)
         @Cookies('refreshToken') refreshToken: string,
         @Res({ passthrough: true }) res: Response,
     ) {

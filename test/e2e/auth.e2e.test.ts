@@ -8,8 +8,6 @@ import { skipSettings } from '../utils/skip-settings';
 import { Connection, Types } from 'mongoose';
 import { getConnectionToken } from '@nestjs/mongoose';
 import { UserManagerTest } from '../utils/userManager.test';
-import { ConfigService } from '@nestjs/config';
-import { ConfigurationType } from '../../src/settings/env/configuration';
 import { UsersRepository } from '../../src/features/users/infrastructure/users.repository';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { EmailService } from '../../src/base/services/email.service';

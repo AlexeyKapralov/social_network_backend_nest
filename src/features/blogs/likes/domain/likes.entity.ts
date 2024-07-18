@@ -27,12 +27,21 @@ export class Like {
         return like
     }
 
+    static async saveLike(likeDocument: LikeDocument) {
+        await likeDocument.save()
+    }
+
 }
 
 export const LikeSchema = SchemaFactory.createForClass(Like)
 
+LikeSchema.methods = {
+    // saveLike: Like.prototype.saveLike
+}
+
 LikeSchema.statics = {
     createLike: Like.createLike,
+    saveLike: Like.saveLike
 }
 
 type LikeStaticType = {
@@ -41,6 +50,7 @@ type LikeStaticType = {
         postId: string,
         likeStatus?: LikeStatus
     ): LikeDocument
+    saveLike(likeDocument: LikeDocument): Promise<void>
 }
 
 export type LikeDocument = HydratedDocument<Like>
